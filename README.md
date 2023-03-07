@@ -1,0 +1,1 @@
+Feel free to declare your own globals, helper functions, reorganize code into separate files, etc. Keep specifically mentioned function names the same as they are originally called by. This will help us when looking at your work.
