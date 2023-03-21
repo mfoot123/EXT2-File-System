@@ -18,6 +18,9 @@ DIR   *dp;
 // declare root
 INODE *root;
 
+int INODES_PER_BLOCK = 12;
+
+
 #define BLKSIZE 1024
 
 int fd;             // opened vdisk for READ
@@ -43,7 +46,25 @@ int search(INODE *ip, char *name)
   // Chapter 11.4.4  int i; 
   // Exercise 6
 
-
+  struct ext2_dir_entry_2 *dp; // dir_entry pointer
+    char *cp; // char pointer
+    int blk = ip->i_block[0]; // get data block (assuming it's the first block)
+    char buf[BLKSIZE], temp[256];
+    get_block(fd, blk, buf); // get data block into buf[ ]
+    dp = (struct ext2_dir_entry_2 *)buf; // as dir_entry
+    cp = buf;
+    while(cp < buf + BLKSIZE){
+        strncpy(temp, dp->name, dp->name_len); // make name a string
+        temp[dp->name_len] = 0; // ensure NULL at end
+        // if names match
+        if (strcmp(temp, name) == 0) { 
+            // return inode number
+            return dp->inode;
+        }
+        cp += dp->rec_len; // advance cp by rec_len
+        dp = (struct ext2_dir_entry_2 *)cp; // pull dp to next entry
+    }
+    return 0; // name not found
 }
 
 int show_dir(INODE *ip)
@@ -105,7 +126,7 @@ int main(int argc, char *argv[])
    dev = open(disk, O_RDWR);
 
    // need to verify EXT2 FS
-   // first well read in the super block
+   // first we'll read in the super block
 
    // FOR BLKSIZE=1KB: SUPER block = 1
 
@@ -113,16 +134,22 @@ int main(int argc, char *argv[])
     sp = (SUPER *)buf;
 
     // verify the disk image is EXT2 FS
-
+    if (sp->s_magic != 0xEF53)
+    {
+        printf("magic = %x is not an ext2 filesystem\n", sp->s_magic);
+        exit(1);
+    }
 
 
     // read in Group Descriptor 0 (in block #2)
+    //FOR BLKSIZE=1KB: groupDescriptor block=2 
     get_block(dev, 2, buf);
     gp = (GD *)buf;
 
     bmap = gp->bg_block_bitmap;
     imap = gp->bg_inode_bitmap;
     inode_start = gp->bg_inode_table;
+    int InodesBeginBlock = inode_start;
     printf("bmp=%d imap=%d inode_start = %d\n", bmap, imap, inode_start);
 
     // mount the root
@@ -131,5 +158,45 @@ int main(int argc, char *argv[])
     // Print contents of the root DIRectory
     print(root);
    
+    // Tokenize pathname into name[0], name[1],... name[n-1]
+    ...
+
+    INODE *ip = root;
+     char buf[BLKSIZE];
+     int  ino, blk, offset;
+
+     for (int i=0; i < n; i++){
+        ino = search(ip, name[i]);
+        
+        if (ino==0){
+          printf("can't find %s\n", name[i]); 
+          exit(1);
+        }
+  
+        // Use Mailman's algorithm to Convert (dev, ino) to newINODE pointer
+
+        INODE *newINODE = NULL;
+        // set ino equal to the roots INODE number
+        ino = search(root, name);
+        // mailmans algorithm
+        blk = (ino - 1) / INODES_PER_BLOCK + InodesBeginBlock;
+        offset = (ino - 1) % INODES_PER_BLOCK;
+        get_block(dev, blk, buf);
+        // buf = a pointer to the buffer containing the inode table block that was read from disk
+        INODE *inode_array = (INODE *) buf;
+        // finds the inode corresponding to a specific offset within the inode table
+        newINODE = &inode_array[offset];
+    
+        // ip points at newINODE of (dev, ino);
+        ip = newINODE;
+     }
+
+    // Extract information from ip-> as needed:
+    // Print direct block numbers;
+
+    // Print indirect block numbers;
+
+
+    //  Print double indirect block numbers, if any
 
 }
