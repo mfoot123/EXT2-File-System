@@ -93,9 +93,6 @@ int main(int argc, char *argv[])
    // open disk
    dev = open(disk, O_RDWR);
 
-   // mount the root
-   mount_root();
-
    // need to verify EXT2 FS
    // first well read in the super block
 
@@ -104,6 +101,23 @@ int main(int argc, char *argv[])
     get_block(dev, 1, buf);
     sp = (SUPER *)buf;
 
+    // verify the disk image is EXT2 FS
 
+
+
+    // read in Group Descriptor 0 (in block #2)
+    get_block(dev, 2, buf);
+    gp = (GD *)buf;
+
+    bmap = gp->bg_block_bitmap;
+    imap = gp->bg_inode_bitmap;
+    inode_start = gp->bg_inode_table;
+    printf("bmp=%d imap=%d inode_start = %d\n", bmap, imap, inode_start);
+
+    // mount the root
+    mount_root();
+
+    // Print contents of the root DIRectory
+    
    
 }
