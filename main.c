@@ -13,12 +13,17 @@ typedef struct ext2_dir_entry_2 DIR;
 SUPER *sp;
 GD    *gp;
 INODE *ip;
-DIR   *dp;   
+DIR   *dp; 
+
+// declare root
+INODE *root;
 
 #define BLKSIZE 1024
 
 int fd;             // opened vdisk for READ
 int inodes_block;   // inodes start block number
+
+int  nblocks, ninodes, bmap, imap, iblk, inode_start;
 
 char gpath[128];    // token strings
 char *name[32];
@@ -65,7 +70,8 @@ int show_dir(INODE *ip)
 
 int mount_root()
 {
-
+  // Let INODE *root point at root INODE (ino=2) in memory:
+  root = iget(dev, 2);
 }
 
 /*************************************************************************/
@@ -82,4 +88,14 @@ int tokenize(char *pathname)
 int main(int argc, char *argv[])
 {
    // follow the steps here: https://eecs.wsu.edu/~cs360/LAB5.html
+   char buf[BLKSIZE];
+
+   // open disk
+   dev = open(disk, O_RDWR);
+
+   // mount the root
+   mount_root();
+
+
+   
 }
