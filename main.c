@@ -42,6 +42,8 @@ int search(INODE *ip, char *name)
 {
   // Chapter 11.4.4  int i; 
   // Exercise 6
+
+
 }
 
 int show_dir(INODE *ip)
@@ -77,7 +79,16 @@ int mount_root()
 /*************************************************************************/
 int tokenize(char *pathname)
 {
-  // you did this many times
+  // set the number of tokens
+  int ntoken = 0;
+  // divide path name into tokens seperated by " "
+  char *p = strtok(pathname, " ");
+  // while p is not NULL put p into name[]
+  while (p != NULL)
+  {
+    name[ntoken++] = p;
+    p = strtok(NULL, " ");
+  }
 } 
 
 // the start of the "showblock" program
@@ -118,6 +129,7 @@ int main(int argc, char *argv[])
     mount_root();
 
     // Print contents of the root DIRectory
-    
+    print(root);
    
+
 }
