@@ -96,6 +96,14 @@ int main(int argc, char *argv[])
    // mount the root
    mount_root();
 
+   // need to verify EXT2 FS
+   // first well read in the super block
+
+   // FOR BLKSIZE=1KB: SUPER block = 1
+
+    get_block(dev, 1, buf);
+    sp = (SUPER *)buf;
+
 
    
 }
