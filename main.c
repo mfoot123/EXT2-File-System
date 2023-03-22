@@ -18,7 +18,7 @@ DIR   *dp;
 // declare root
 INODE *root;
 
-int INODES_PER_BLOCK = 12;
+int INODES_PER_BLOCK = 8, ibuf[256];
 
 
 #define BLKSIZE 1024
@@ -159,10 +159,9 @@ int main(int argc, char *argv[])
     print(root);
    
     // Tokenize pathname into name[0], name[1],... name[n-1]
-    ...
+    
 
     INODE *ip = root;
-     char buf[BLKSIZE];
      int  ino, blk, offset;
 
      for (int i=0; i < n; i++){
@@ -195,7 +194,16 @@ int main(int argc, char *argv[])
     // Print direct block numbers;
 
     // Print indirect block numbers;
+      int b12 = ip->i_block[12];
+      if(b12){
+        get_block(dev, b12, ibuf);
 
+        int i = 0;
+        while(ibuf[i] && i < 256){
+          printf("%d", ibuf[i]);
+          i++;
+        }
+      }
 
     //  Print double indirect block numbers, if any
 
