@@ -75,14 +75,17 @@ int search(INODE *ip, char *name)
     strncpy(temp, dp->name, dp->name_len);
     temp[dp->name_len] = 0;
 
-    printf("%4d %4d %4d %s\n", dp->inode, dp->rec_len, dp->name_len, temp);
+    // printf("%4d %4d %4d %s\n", dp->inode, dp->rec_len, dp->name_len, temp);
 
     if (strcmp(temp, name) == 0)
     {
       printf("found\n");
       return dp->inode;
     }
-
+    if (dp->rec_len == 0)
+    {
+      return 0;
+    }
     cp += dp->rec_len;
     dp = (DIR *)cp;
   }
@@ -109,6 +112,10 @@ int show_dir(INODE *ip)
     printf("%4d %4d %4d %s\n", dp->inode, dp->rec_len, dp->name_len, temp);
 
     cp += dp->rec_len;
+    if (dp->rec_len == 0)
+    {
+      return 0;
+    }
     dp = (DIR *)cp;
   }
 }
@@ -116,7 +123,9 @@ int show_dir(INODE *ip)
 int mount_root()
 {
   // Let INODE *root point at root INODE (ino=2) in memory:
-  root = iget(dev, 2);
+  // root = iget(dev, 2);
+  get_block(dev, inode_start, buf);
+  root = (INODE *)buf + 1;
 }
 
 /*************************************************************************/
@@ -141,6 +150,10 @@ int tokenize(char *pathname)
 // example usage: ./lab5.bin lost+found
 int main(int argc, char *argv[])
 {
+  char pathname[256];
+  printf("Enter a Pathname: ");
+  scanf("%s", pathname);
+  printf("\n");
   // follow the steps here: https://eecs.wsu.edu/~cs360/LAB5.html
   // open disk
   dev = open(disk, O_RDWR);
@@ -175,28 +188,15 @@ int main(int argc, char *argv[])
   mount_root();
 
   // Print contents of the root DIRectory
-  char *cp, temp[256];
-
-  dp = (struct ext2_dir_entry_2 *)buf;
-  cp = buf;
-  while (cp < buf + BLKSIZE)
-  {
-    strncpy(temp, dp->name, dp->name_len);
-    temp[dp->name_len] = 0;
-    printf("%4d %4d %4d %s\n", dp->inode, dp->rec_len, dp->name_len, temp);
-    cp += dp->rec_len;
-    dp = (struct ext2_dir_entry_2 *)cp;
-  }
-
-  // print(root);
+  show_dir(root);
 
   // Tokenize pathname into name[0], name[1],... name[n-1]
-  tokenize(&argv[1]);
+  int num = tokenize(pathname);
 
   INODE *ip = root;
   int ino, blk, offset;
 
-  for (int i = 0; i < n; i++)
+  for (int i = 0; i < num; i++)
   {
     ino = search(ip, name[i]);
 
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 
     INODE *newINODE = NULL;
     // set ino equal to the roots INODE number
-    ino = search(root, name);
+    ino = search(ip, name);
     // mailmans algorithm
     blk = (ino - 1) / INODES_PER_BLOCK + InodesBeginBlock;
     offset = (ino - 1) % INODES_PER_BLOCK;
@@ -264,14 +264,22 @@ int main(int argc, char *argv[])
 
   //  Print double indirect block numbers, if any
   int b13 = ip->i_block[13];
+  int double_ibuf[BLKSIZE];
   if (b13)
   {
-    get_block(dev, b12, ibuf);
+    get_block(dev, b13, ibuf);
 
     int i = 0;
+    int j = 0;
     while (ibuf[i] && i < 256)
     {
-      printf("%d", ibuf[i]);
+      get_block(dev, ibuf[i], double_ibuf);
+      j = 0;
+      while (ibuf[j] && j < 256)
+      {
+        printf("%d", ibuf[j]);
+        j++;
+      }
       i++;
     }
   }
