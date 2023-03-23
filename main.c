@@ -179,12 +179,13 @@ int main(int argc, char *argv[])
 
   dp = (struct ext2_dir_entry_2 *)buf;
   cp = buf;
-  while(cp < buf + BLKSIZE){
-    strncpy(temp, dp->name, dp->name_len); 
+  while (cp < buf + BLKSIZE)
+  {
+    strncpy(temp, dp->name, dp->name_len);
     temp[dp->name_len] = 0;
     printf("%4d %4d %4d %s\n", dp->inode, dp->rec_len, dp->name_len, temp);
     cp += dp->rec_len;
-    dp = (struct ext2_dir_entry_2 *) cp;
+    dp = (struct ext2_dir_entry_2 *)cp;
   }
 
   // print(root);
