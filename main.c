@@ -42,7 +42,7 @@ INODE *iget(int dev, int ino)
   int i, block, offset;
   
   block = (ino-1)/8 + inodes_block; // disk block containing this inode
-  offset= (ino-1)%8; // which inode in this block
+  offset= (ino-1) % 8; // which inode in this block
   get_block(dev, block, buf);
   ip = (INODE *)buf + offset;
   return ip;
@@ -106,6 +106,9 @@ int show_dir(INODE *ip)
        printf("%4d %4d %4d %s\n", dp->inode, dp->rec_len, dp->name_len, temp);
 
        cp += dp->rec_len;
+       if(dp->rec_len == 0) {
+        return 0;
+       }
        dp = (DIR *)cp;
    }
 }
@@ -113,7 +116,9 @@ int show_dir(INODE *ip)
 int mount_root()
 {
   // Let INODE *root point at root INODE (ino=2) in memory:
-  root = iget(dev, 2);
+  //root = iget(dev, 2);
+  get_block(dev, inode_start, buf);
+  root = (INODE*)buf + 1;
 }
 
 /*************************************************************************/
@@ -173,13 +178,16 @@ int main(int argc, char *argv[])
     mount_root();
 
     // Print contents of the root DIRectory
-    //print(root);
+    show_dir(root);
+    
    
     // Tokenize pathname into name[0], name[1],... name[n-1]
     tokenize(&argv[1]);
 
+    
+
     INODE *ip = root;
-     int  ino, blk, offset;
+    int  ino, blk, offset;
 
      for (int i=0; i < n; i++){
         ino = search(ip, name[i]);
@@ -244,12 +252,19 @@ int main(int argc, char *argv[])
 
     //  Print double indirect block numbers, if any
     int b13 = ip->i_block[13];
+    int double_ibuf[BLKSIZE];
       if(b13){
-        get_block(dev, b12, ibuf);
+        get_block(dev, b13, ibuf);
 
         int i = 0;
+        int j = 0;
         while(ibuf[i] && i < 256){
-          printf("%d", ibuf[i]);
+          get_block(dev, ibuf[i], double_ibuf);
+          j = 0;
+          while(ibuf[j] && j < 256) {
+            printf("%d", ibuf[j]);
+            j++;
+          }
           i++;
         }
       }
