@@ -1,5 +1,8 @@
 /***** type.h file for CS360 Project *****/
 
+#ifndef type_h
+#define type_h
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -28,8 +31,8 @@ typedef struct minode{
   INODE INODE;            // disk INODE
   int   dev, ino;
   int   cacheCount;       // minode in cache count
-  int   shareCount;       // number of users on this minode
-  int   modified;         // modified while in memory
+  int   shareCount;       // number of users on this minode (refCount?)
+  int   modified;         // modified while in memory (aka dirty)
   int   id;               // index ID
   struct minode *next;    // pointer to next minode
 
@@ -52,3 +55,20 @@ typedef struct proc{
   struct minode *cwd;   // CWD pointer
   OFT   *fd[NFD];       // file descriptor array
 } PROC;
+
+// Mount Table structure from textbook
+typedef struct mtable{
+int dev; // device number; 0 for FREE
+int ninodes; // from superblock
+int nblocks;
+int free_blocks; // from superblock and GD
+int free_inodes;
+int bmap; // from group descriptor
+int imap;
+int iblock; // inodes start block
+MINODE *mntDirPtr; // mount point DIR pointer
+char devName[64]; //device name
+char mntName[64]; // mount point DIR name
+}MTABLE;
+
+#endif

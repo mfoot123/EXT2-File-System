@@ -131,13 +131,13 @@ int main(int argc, char *argv[ ])
      if (strcmp(cmd, "ls")==0)
         ls();
      if (strcmp(cmd, "cd")==0)
-        cd();
+        //cd();
      if (strcmp(cmd, "pwd")==0)
-        pwd();
+        //pwd();
 
 
      if (strcmp(cmd, "show")==0)
-        show_dir();
+        //show_dir();
      if (strcmp(cmd, "hits")==0)
         hit_ratio();
      if (strcmp(cmd, "exit")==0)
@@ -149,6 +149,34 @@ int main(int argc, char *argv[ ])
 int show_dir(MINODE *mip)
 {
   // show contents of mip DIR: same as in LAB5
+  char sbuf[BLKSIZE], temp[256];
+  DIR *dp;
+  char *cp;
+
+  // set ip to the INODE in our MINODE
+  INODE *ip = &mip->INODE;
+
+  // ASSUME only one data block i_block[0]
+  // YOU SHOULD print i_block[0] number here
+  get_block(dev, ip->i_block[0], sbuf);
+
+  dp = (DIR *)sbuf;
+  cp = sbuf;
+
+  while (cp < sbuf + BLKSIZE)
+  {
+    strncpy(temp, dp->name, dp->name_len);
+    temp[dp->name_len] = 0;
+
+    printf("%4d %4d %4d %s\n", dp->inode, dp->rec_len, dp->name_len, temp);
+
+    cp += dp->rec_len;
+    if (dp->rec_len == 0)
+    {
+      return 0;
+    }
+    dp = (DIR *)cp;
+  }
 }
 
 int hit_ratio()
