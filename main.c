@@ -1,288 +1,171 @@
-/************** lab5base.c file ******************/
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <ext2fs/ext2_fs.h>
-#include <string.h>
+#include "type.h"
 
-typedef struct ext2_super_block SUPER;
-typedef struct ext2_group_desc GD;
-typedef struct ext2_inode INODE;
-typedef struct ext2_dir_entry_2 DIR;
+/********** globals **************/
+PROC   proc[NPROC];
+PROC   *running;
 
-SUPER *sp;
-GD *gp;
-INODE *ip;
-DIR *dp;
+MINODE minode[NMINODE];   // in memory INODES
+MINODE *freeList;         // free minodes list
+MINODE *cacheList;        // cached minodes list
 
-// declare root
-INODE *root;
+MINODE *root;             // root minode pointer
 
-int INODES_PER_BLOCK = 8, ibuf[256];
+OFT    oft[NOFT];         // for level-2 only
 
-#define BLKSIZE 1024
+char gline[256];          // global line hold token strings of pathname
+char *name[64];           // token string pointers
+int  n;                   // number of token strings
 
-char buf[BLKSIZE];
+int ninodes, nblocks;     // ninodes, nblocks from SUPER block
+int bmap, imap, inodes_start, iblk;  // bitmap, inodes block numbers
 
-int fd;           // opened vdisk for READ
-int inodes_block; // inodes start block number
+int  fd, dev;
+char cmd[16], pathname[128], parameter[128];
+int  requests, hits;
 
-int nblocks, ninodes, bmap, imap, iblk, inode_start;
+// start up files
+#include "util.c"
+#include "cd_ls_pwd.c"
 
-char gpath[128]; // token strings
-char *name[32];
-int n;
+int init()
+{
+  int i, j;
+  // initialize minodes into a freeList
+  for (i=0; i<NMINODE; i++){
+    MINODE *mip = &minode[i];
+    mip->dev = mip->ino = 0;
+    mip->id = i;
+    mip->next = &minode[i+1];
+  }
+  minode[NMINODE-1].next = 0;
+  freeList = &minode[0];       // free minodes list
+
+  cacheList = 0;               // cacheList = 0
+
+  for (i=0; i<NOFT; i++)
+    oft[i].shareCount = 0;     // all oft are FREE
+
+  for (i=0; i<NPROC; i++){     // initialize procs
+     PROC *p = &proc[i];
+     p->uid = p->gid = i;      // uid=0 for SUPER user
+     p->pid = i+1;             // pid = 1,2,..., NPROC-1
+
+     for (j=0; j<NFD; j++)
+       p->fd[j] = 0;           // open file descritors are 0
+  }
+
+  running = &proc[0];          // P1 is running
+  requests = hits = 0;         // for hit_ratio of minodes cache
+}
 
 char *disk = "diskimage";
-int dev = 0; // set this when opening disk
 
-INODE *iget(int dev, int ino)
+int main(int argc, char *argv[ ])
 {
-  INODE *ip;
-  int i, block, offset;
+  char line[128];
+  char buf[BLKSIZE];
 
-  block = (ino - 1) / 8 + inodes_block; // disk block containing this inode
-  offset = (ino - 1) % 8;               // which inode in this block
-  get_block(dev, block, buf);
-  ip = (INODE *)buf + offset;
-  return ip;
-}
+  init();
 
-int get_block(int dev, int blk, char *buf)
-{
-  lseek(dev, blk * BLKSIZE, SEEK_SET);
-  return read(dev, buf, BLKSIZE);
-}
+  fd = dev = open(disk, O_RDWR);
+  printf("dev = %d\n", dev);  // YOU should check dev value: exit if < 0
 
-int search(INODE *ip, char *name)
-{
-  // Chapter 11.4.4  int i;
-  // Exercise 6
-
-  char sbuf[BLKSIZE], temp[256];
-  DIR *dp;
-  char *cp;
-
-  // ASSUME only one data block i_block[0]
-  // YOU SHOULD print i_block[0] number here
-  get_block(dev, ip->i_block[0], sbuf);
-
-  dp = (DIR *)sbuf;
-  cp = sbuf;
-
-  while (cp < sbuf + BLKSIZE)
-  {
-    strncpy(temp, dp->name, dp->name_len);
-    temp[dp->name_len] = 0;
-
-    // printf("%4d %4d %4d %s\n", dp->inode, dp->rec_len, dp->name_len, temp);
-
-    if (strcmp(temp, name) == 0)
-    {
-      printf("found\n");
-      return dp->inode;
-    }
-    if (dp->rec_len == 0)
-    {
-      return 0;
-    }
-    cp += dp->rec_len;
-    dp = (DIR *)cp;
-  }
-}
-
-int show_dir(INODE *ip)
-{
-  char sbuf[BLKSIZE], temp[256];
-  DIR *dp;
-  char *cp;
-
-  // ASSUME only one data block i_block[0]
-  // YOU SHOULD print i_block[0] number here
-  get_block(dev, ip->i_block[0], sbuf);
-
-  dp = (DIR *)sbuf;
-  cp = sbuf;
-
-  while (cp < sbuf + BLKSIZE)
-  {
-    strncpy(temp, dp->name, dp->name_len);
-    temp[dp->name_len] = 0;
-
-    printf("%4d %4d %4d %s\n", dp->inode, dp->rec_len, dp->name_len, temp);
-
-    cp += dp->rec_len;
-    if (dp->rec_len == 0)
-    {
-      return 0;
-    }
-    dp = (DIR *)cp;
-  }
-}
-
-int mount_root()
-{
-  // Let INODE *root point at root INODE (ino=2) in memory:
-  // root = iget(dev, 2);
-  get_block(dev, inode_start, buf);
-  root = (INODE *)buf + 1;
-}
-
-/*************************************************************************/
-int tokenize(char *pathname)
-{
-  char *s;
-  strcpy(gpath, pathname); // copy pathname to global gpath[]
-  n = 0;
-  s = strtok(gpath, "/"); // tokenize the path
-  while (s)               // while there is a token
-  {
-    name[n++] = s;      // write the token to name[n]
-    s = strtok(0, "/"); // tokenize again
-  }
-  return n;
-}
-
-// the start of the "showblock" program
-// usage: "./a.out /a/b/c/d"
-// that means you will have to parse argv for the path
-// see the example 'lab5.bin' program
-// example usage: ./lab5.bin lost+found
-int main(int argc, char *argv[])
-{
-  char pathname[256];
-  printf("Enter a Pathname: ");
-  scanf("%s", pathname);
-  printf("\n");
-  // follow the steps here: https://eecs.wsu.edu/~cs360/LAB5.html
-  // open disk
-  dev = open(disk, O_RDWR);
-
-  // need to verify EXT2 FS
-  // first we'll read in the super block
-
-  // FOR BLKSIZE=1KB: SUPER block = 1
-
+  // get super block of dev
   get_block(dev, 1, buf);
-  sp = (SUPER *)buf;
+  SUPER *sp = (SUPER *)buf;  // you should check s_magic for EXT2 FS
 
-  // verify the disk image is EXT2 FS
-  if (sp->s_magic != 0xEF53)
-  {
-    printf("magic = %x is not an ext2 filesystem\n", sp->s_magic);
-    exit(1);
-  }
+  ninodes = sp->s_inodes_count;
+  nblocks = sp->s_blocks_count;
+  printf("ninodes=%d  nblocks=%d\n", ninodes, nblocks);
 
-  // read in Group Descriptor 0 (in block #2)
-  // FOR BLKSIZE=1KB: groupDescriptor block=2
   get_block(dev, 2, buf);
-  gp = (GD *)buf;
+  GD *gp = (GD *)buf;
 
   bmap = gp->bg_block_bitmap;
   imap = gp->bg_inode_bitmap;
-  inode_start = gp->bg_inode_table;
-  int InodesBeginBlock = inode_start;
-  printf("bmp=%d imap=%d inode_start = %d\n", bmap, imap, inode_start);
+  iblk = inodes_start = gp->bg_inode_table;
 
-  // mount the root
-  mount_root();
+  printf("bmap=%d  imap=%d  iblk=%d\n", bmap, imap, iblk);
 
-  // Print contents of the root DIRectory
-  show_dir(root);
+  // HERE =========================================================
+  MINODE *mip = freeList;         // remove minode[0] from freeList
+  freeList = freeList->next;
+  cacheList = mip;                // enter minode[0] in cacheList
 
-  // Tokenize pathname into name[0], name[1],... name[n-1]
-  int num = tokenize(pathname);
+  // get root INODE
+  get_block(dev, iblk, buf);
+  INODE *ip = (INODE *)buf + 1;   // #2 INODE
+  mip->INODE = *ip;               // copy into mip->INODE
 
-  INODE *ip = root;
-  int ino, blk, offset;
+  mip->cacheCount = 1;
+  mip->shareCount = 2;            // for root AND CWD
+  mip->modified   = 0;
 
-  for (int i = 0; i < num; i++)
-  {
-    ino = search(ip, name[i]);
+  root = mip;           // root points at #2 INODE in minode[0]
 
-    if (ino == 0)
-    {
-      printf("can't find %s\n", name[i]);
-      exit(1);
-    }
+  printf("set P1's CWD to root\n");
+  running->cwd = root;           // CWD = root
+  // Endhere ====================================================
 
-    // Use Mailman's algorithm to Convert (dev, ino) to newINODE pointer
+ /********* write code for iget()/iput() in util.c **********
+          Replace code between HERE and ENDhere with
 
-    INODE *newINODE = NULL;
-    // set ino equal to the roots INODE number
-    ino = search(ip, name);
-    // mailmans algorithm
-    blk = (ino - 1) / INODES_PER_BLOCK + InodesBeginBlock;
-    offset = (ino - 1) % INODES_PER_BLOCK;
-    get_block(dev, blk, buf);
-    // buf = a pointer to the buffer containing the inode table block that was read from disk
-    INODE *inode_array = (INODE *)buf;
-    // finds the inode corresponding to a specific offset within the inode table
-    newINODE = &inode_array[offset];
+  root         = iget(dev, 2);
+  running->cwd = iget(dev, 2);
+ **********************************************************/
 
-    // ip points at newINODE of (dev, ino);
-    ip = newINODE;
+  while(1){
+     printf("P%d running\n", running->pid);
+     pathname[0] = parameter[0] = 0;
+
+     printf("enter command [cd|ls|pwd|exit] : ");
+     fgets(line, 128, stdin);
+     line[strlen(line)-1] = 0;    // kill \n at end
+
+     if (line[0]==0)
+        continue;
+
+     sscanf(line, "%s %s %64c", cmd, pathname, parameter);
+     printf("pathname=%s parameter=%s\n", pathname, parameter);
+
+     if (strcmp(cmd, "ls")==0)
+        ls();
+     if (strcmp(cmd, "cd")==0)
+        cd();
+     if (strcmp(cmd, "pwd")==0)
+        pwd();
+
+
+     if (strcmp(cmd, "show")==0)
+        show_dir();
+     if (strcmp(cmd, "hits")==0)
+        hit_ratio();
+     if (strcmp(cmd, "exit")==0)
+        quit();
   }
+}
 
-  // Extract information from ip-> as needed:
-  // Print direct block numbers;
-  // direct = blocks 0 - 11
-  for (int i = 0; i < 12; i++)
-  {
-    int block = ip->i_block[i];
-    if (block)
-    {
-      get_block(dev, block, ibuf);
 
-      int i = 0;
-      while (ibuf[i] && i < 256)
-      {
-        printf("%d", ibuf[i]);
-        i++;
-      }
-    }
-    else
-      printf("No indirect block number %d", &i);
-  }
+int show_dir(MINODE *mip)
+{
+  // show contents of mip DIR: same as in LAB5
+}
 
-  // Print indirect block numbers;
-  // indirect = block 12
-  int b12 = ip->i_block[12];
-  if (b12)
-  {
-    get_block(dev, b12, ibuf);
+int hit_ratio()
+{
+  // print cacheList;
+  // compute and print hit_ratio
+}
 
-    int i = 0;
-    while (ibuf[i] && i < 256)
-    {
-      printf("%d", ibuf[i]);
-      i++;
-    }
-  }
-  else
-    printf("No indirect block number");
-
-  //  Print double indirect block numbers, if any
-  int b13 = ip->i_block[13];
-  int double_ibuf[BLKSIZE];
-  if (b13)
-  {
-    get_block(dev, b13, ibuf);
-
-    int i = 0;
-    int j = 0;
-    while (ibuf[i] && i < 256)
-    {
-      get_block(dev, ibuf[i], double_ibuf);
-      j = 0;
-      while (ibuf[j] && j < 256)
-      {
-        printf("%d", ibuf[j]);
-        j++;
-      }
-      i++;
-    }
-  }
-  else
-    printf("No double indirect block number");
+int quit()
+{
+   MINODE *mip = cacheList;
+   while(mip){
+     if (mip->shareCount){
+        mip->shareCount = 1;
+        iput(mip);    // write INODE back if modified
+     }
+     mip = mip->next;
+   }
+   exit(0);
 }
