@@ -192,19 +192,15 @@ MINODE *path2inode(char *pathname)
     // return parent inode
   }
 
-  for (int i=0; i < n; i++){
-    INODE *newINODE = NULL;
-    // set ino equal to the roots INODE number
-    ino = search(mip, name);
-    // call iput on mip
-    iput(mip);
+  // determine absolute or relative
 
-    // set mip equal to the output of iget(dev, ino)
-  mip = iget(dev, ino);
+  // tokenize the path
 
-    // ip points at newINODE of (dev, ino);
-    mip = newINODE;
-  }
+  // call search to get to c
+
+  // mailman’s algorithm
+
+  // call iget(dev, ino)
 
 }
 
