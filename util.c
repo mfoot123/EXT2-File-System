@@ -1,3 +1,5 @@
+#include "type.h"
+
 /*********** globals in main.c ***********/
 extern PROC   proc[NPROC];
 extern PROC   *running;
@@ -57,61 +59,51 @@ MINODE *iget(int dev, int ino)
   int i;
   MINODE *mip;
 
-  // 1. search cacheList for minode=(dev, ino);
-  for (i=0; i<NMINODE; i++){
-    mip = &minode[i];
-    if (mip->shareCount && (mip->dev==dev) && (mip->ino==ino))
-    {
-      //if (found){
-      // inc minode's cacheCount by 1;
+  requests++;
+
+  mip = cacheList;
+  while (mip != NULL) {
+    if (mip->shareCount && (mip->dev == dev) && (mip->ino == ino)) {
+      // If found: 
+      //increment minode's cacheCount and shareCount
       mip->cacheCount++;
-      // inc minode's shareCount by 1;
       mip->shareCount++;
-      // return minode pointer;
+      // update our hits
+      hits++;
+      // return minode pointer
       return mip;
     }
+    // traverse to next MINODE in the list
+    mip = mip->next;
   }
 
-  // needed (dev, ino) NOT in cacheList
-  // 2. if (freeList NOT empty){
-  if (!freeList){
-    // remove a minode from freeList;
+  // Needed (dev, ino) NOT in cacheList
+  if (!freeList) {
+    // If freeList is empty, allocate a new MINODE
+    mip = (MINODE *)malloc(sizeof(MINODE));
+  } else {
+    // Otherwise, remove a minode from freeList
     mip = freeList;
     freeList = freeList->next;
-    // set minode to (dev, ino), cacheCount=1 shareCount=1, modified=0;
-    mip->dev = dev;
-    mip->ino = ino;
-    mip->cacheCount = 1;
-    mip->shareCount = 1;
-    mip->modified = 0;
-    // load INODE of (dev, ino) from disk into minode.INODE;
-    get_inode(dev, ino, &mip->INODE);
-    // enter minode into cacheList;
-    enter_minode(mip);
-    // return minode pointer;
-    return mip;
   }
 
-  // freeList empty case:
-  // 3. find a minode in cacheList with shareCount=0, cacheCount=SMALLest
-  int smallest = minode[0].cacheCount;
-  int smallestIndex = 0;
-  for (i = 1; i < NMINODE; i++) {
-    if (minode[i].cacheCount < smallest && minode[i].shareCount == 0) {
-      smallest = minode[i].cacheCount;
-      smallestIndex = i;
-    }
-  }
-  mip = &minode[smallestIndex];
-  // set minode to (dev, ino), shareCount=1, cacheCount=1, modified=0
+  // Set minode to (dev, ino), cacheCount=1 shareCount=1, and modified=0
   mip->dev = dev;
   mip->ino = ino;
   mip->cacheCount = 1;
   mip->shareCount = 1;
   mip->modified = 0;
-  // load INODE of (dev, ino) from disk into minode.INODE;
-  get_inode(dev, ino, &mip->INODE);
-  // return minode pointer;
+
+  // Add the new minode to the end of the cacheList
+  int j;
+  for (j = 0; j < NMINODE; j++) {
+    if (!minode[j].dev) {
+      minode[j] = *mip;
+      break;
+    }
+  }
+
+  // Return minode pointer
   return mip;
 }
 
@@ -129,8 +121,8 @@ int iput(MINODE *mip)  // release a mip
 
   //  2. last user, INODE modified: MUST write back to disk
   // Use Mailman's algorithm to write minode.INODE back to disk)
-  block = (mip->ino - 1) / 8 + inodes_start;
-  offset = (mip->ino - 1) % 8;
+  block = (mip->ino - 1) / inodes_per_block + inodes_start;
+  offset = (mip->ino - 1) % inodes_per_block;
   // get block containing this inode
   get_block(mip->dev, block, buf);
   // ip points at INODE
@@ -140,7 +132,7 @@ int iput(MINODE *mip)  // release a mip
   // write back to disk
   put_block(mip->dev, block, buf); 
   // mip->refCount = 0;
-  midalloc(mip);
+  mip->shareCount = 0;
 }
 
 int search(MINODE *mip, char *name)
@@ -181,12 +173,39 @@ int search(MINODE *mip, char *name)
 
 MINODE *path2inode(char *pathname)
 {
+  MINODE *mip = root;
+  char buf[BLKSIZE];
+  int  ino, blk, offset;
   /*******************
   return minode pointer of pathname;
   return 0 if pathname invalid;
 
   This is same as YOUR main loop in LAB5 without printing block numbers
   *******************/
+  if(strcmp(pathname, ".") == 0 || pathname == NULL)
+  {
+    //return cwd
+    return running->cwd;
+  }
+  else if(strcmp(pathname, "..") == 0)
+  {
+    // return parent inode
+  }
+
+  for (int i=0; i < n; i++){
+    INODE *newINODE = NULL;
+    // set ino equal to the roots INODE number
+    ino = search(mip, name);
+    // call iput on mip
+    iput(mip);
+
+    // set mip equal to the output of iget(dev, ino)
+  mip = iget(dev, ino);
+
+    // ip points at newINODE of (dev, ino);
+    mip = newINODE;
+  }
+
 }
 
 int findmyname(MINODE *pip, int myino, char myname[ ])
@@ -196,14 +215,69 @@ int findmyname(MINODE *pip, int myino, char myname[ ])
   search for myino;    // same as search(pip, name) but search by ino
   copy name string into myname[256]
   ******************/
+    char *cp;
+    INODE *ip;
+    int i, blk, offset;
+    DIR *dp;
+    char buf[BLKSIZE];
+
+    // Get the inode of the parent directory
+    ip = &pip->INODE;
+
+    // Calculate the block and offset of the directory entry
+    blk = (myino - 1) / (BLKSIZE / sizeof(DIR)) + ip->i_block[0];
+    offset = (myino - 1) % (BLKSIZE / sizeof(DIR));
+
+    // Read the block that contains the directory entry
+    get_block(pip->dev, blk, buf);
+
+    // Get a pointer to the directory entry
+    dp = (DIR *) buf + offset;
+
+    // Copy the name of the inode into myname 
+    cp = dp->name;
+    strncpy(myname, cp, strlen(cp));
+    myname[strlen(cp)] = '\0';
+
+    return 0;
 }
 
 int findino(MINODE *mip, int *myino)
 {
+  DIR *dp;
   /*****************
   mip points at a DIR minode
   i_block[0] contains .  and  ..
   get myino of .
   return parent_ino of ..
   *******************/
+ // Check if mip points at a DIR minode
+    if (!S_ISDIR(mip->INODE.i_mode)) {
+        printf("Error: inode is not a directory\n");
+        return -1;
+    }
+
+    // Get the inode number of the current directory (.)
+    *myino = mip->ino;
+
+    // Get the parent inode number (..)
+    if (mip->ino == root) {
+        // Special case: the root directory
+        return 0;
+    } else {
+        // Get the parent directory from the current directory's inode
+        int parent_block = mip->INODE.i_block[0];
+        char parent_buf[BLKSIZE];
+        get_block(mip->dev, parent_block, parent_buf);
+
+        // The parent directory is stored in the second entry of the block
+        // (the first entry is for ".", the second is for "..")
+        char *cp = parent_buf;
+        dp = (DIR *)cp;
+        cp += dp->rec_len;
+        dp = (DIR *)cp;
+        *myino = dp->inode;
+
+        return 0;
+    }
 }

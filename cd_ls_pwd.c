@@ -37,9 +37,8 @@ int cd(char *pathname)
     MINODE *mip;
     int dev = running->cwd->dev;
 
-    // (1). int ino = getino(pathname); 
-    // Get the inode number of the path
-    ino = getino(pathname, &dev);
+    // (1). Call path_to_inode to get the inode number and device
+    ino = path2inode(pathname);
 
     // return error if ino=0
     if (ino == 0) {
@@ -55,7 +54,7 @@ int cd(char *pathname)
     // Verify that the inode is a directory
     if (!S_ISDIR(mip->INODE.i_mode)) {
         printf("%s: Not a directory\n", pathname);
-        // release the  mip
+        // release the mip
         iput(mip);
         return -1;
     }
@@ -86,6 +85,7 @@ void rpwd(MINODE *wd)
     int ino;
     MINODE *pip;
     char temp[256];
+    char myname[256];
 
     // (1). if (wd==root) return;
     if (wd == root) {
@@ -95,17 +95,14 @@ void rpwd(MINODE *wd)
     }
 
     //(2). from wd->INODE.i_block[0], get my_ino and parent_ino
-    // Get the inode number of the parent directory
-    ino = getino("..", wd);
+    ino = search(wd, "..");
 
     // (3). pip = iget(dev, parent_ino);
     // Get the parent inode
     pip = iget(dev, ino);
 
-    // Find the name of the current directory in the parent directory
-    ino = getino(".", wd);
-
     // (4). from pip->INODE.i_block[ ]: get my_name string by my_ino as LOCAL
+    ino = search(pip, ".");
     get_block(dev, pip->INODE.i_block[0], buf);
 
     // dp is initialized to point to the start of buf
@@ -123,7 +120,8 @@ void rpwd(MINODE *wd)
     }
 
     // copy name to temp
-    strncpy(temp, dp->name, dp->name_len);
+    strncpy(myname, dp->name, dp->name_len);
+    myname[dp->name_len] = '\0';
 
     // (5). rpwd(pip); // recursive call rpwd(pip) with parent minode
     // Recursively print the path to the parent directory
@@ -131,7 +129,7 @@ void rpwd(MINODE *wd)
 
     // (6). print "/%s", my_name;
     // Print the name of the current directory
-    printf("/%s", temp);
+    printf("/%s", myname);
 
     iput(pip);
 }
@@ -140,7 +138,7 @@ void rpwd(MINODE *wd)
 
 /***********************LS**************************/
 
-int ls()
+int ls(char *pathname)
 {
   MINODE *mip = running->cwd;
 

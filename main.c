@@ -30,6 +30,7 @@ int  requests, hits;
 int init()
 {
   int i, j;
+
   // initialize minodes into a freeList
   for (i=0; i<NMINODE; i++){
     MINODE *mip = &minode[i];
@@ -129,15 +130,15 @@ int main(int argc, char *argv[ ])
      printf("pathname=%s parameter=%s\n", pathname, parameter);
 
      if (strcmp(cmd, "ls")==0)
-        ls();
+        ls(pathname);
      if (strcmp(cmd, "cd")==0)
-        //cd();
+        cd(pathname);
      if (strcmp(cmd, "pwd")==0)
-        //pwd();
+        pwd(running->cwd);
 
 
      if (strcmp(cmd, "show")==0)
-        //show_dir();
+        show_dir(running->cwd);
      if (strcmp(cmd, "hits")==0)
         hit_ratio();
      if (strcmp(cmd, "exit")==0)
@@ -181,8 +182,73 @@ int show_dir(MINODE *mip)
 
 int hit_ratio()
 {
-  // print cacheList;
-  // compute and print hit_ratio
+  MINODE* temp = 0;
+  MINODE* p;
+  // while there is something in the queue
+  while(p = dequeue(cacheList))
+  {
+    enqueue(&temp, p);
+  }
+
+  cacheList = temp;
+
+  printf("\nCache List:\n");
+  printf("%s %s %s %s\n", "CacheCount", "Device", "Inode", "ShareCount");
+
+  // loop through the linked list
+  MINODE* mip = cacheList;
+  while (mip != NULL)
+  {
+    // only print used minodes aka ones that have been shared
+    if (mip->shareCount > 0)
+    {
+      printf("%d %d %d %d\n", mip->cacheCount, mip->dev, mip->ino, mip->shareCount);
+    }
+    mip = mip->next;
+  }
+
+  double ratio = (hits / requests) * 100;
+  printf("Hit Ratio: %f\n", ratio);
+}
+
+MINODE* dequeue(MINODE* queue)
+{
+  if (queue == NULL) {
+    // empty queue, nothing to dequeue
+    return NULL;
+  }
+  
+  // save the head pointer in temp
+  MINODE* temp = queue;
+  // set queue equal to its next MINODE
+  queue = queue->next;
+  
+  return temp;
+}
+
+// modifying a pointer so double star
+int enqueue(MINODE** queue, MINODE* insert)
+{
+    // If queue is empty insert as the first element
+    MINODE* temp = *queue;
+    if (*queue == NULL) {
+        *queue = insert;
+        insert->next = NULL;
+    } else {
+      //  run through the list until we find our current count is less then the next
+      while (temp->cacheCount >= temp->next->cacheCount) {
+        temp = temp->next;
+      }
+      MINODE* temp2 = temp;
+      // Insert the new element at the end
+      temp2 = temp->next;
+      temp->next = insert;
+
+      insert->next = temp2;
+
+    }
+
+    return 0;
 }
 
 int quit()
