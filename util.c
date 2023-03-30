@@ -231,20 +231,17 @@ MINODE *path2inode(char *pathname)
 
   // tokenize the path
   int num = tokenize(pathname);
-  // search to get to c
+  // search to get to last var
   for (int i = 0; i < num; i++)
   {
     ino = search(mip, name[i]);
-      // call iget(dev, ino)
-  mip = iget(dev, ino);
-
+    // call iget(dev, ino)
+    mip = iget(dev, ino);
     if (ino == 0)
     {
       printf("can't find %s\n", name[i]);
       exit(1);
     }
-
-
   }
 }
 

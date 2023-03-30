@@ -23,6 +23,9 @@ int  fd, dev;
 char cmd[16], pathname[128], parameter[128];
 int  requests, hits;
 
+MINODE* dequeue(MINODE* queue);
+int enqueue(MINODE** queue, MINODE* insert);
+
 // start up files
 #include "util.c"
 #include "cd_ls_pwd.c"
