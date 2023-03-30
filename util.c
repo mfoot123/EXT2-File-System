@@ -114,16 +114,33 @@ MINODE *iget(int dev, int ino)
     return mip;
   }
 
-  // freeList empty case:
-  /*
-  3. find a minode in cacheList with shareCount=0, cacheCount=SMALLEST
-  set minode to (dev, ino), shareCount=1, cacheCount=1, modified=0
-  return minode pointer;
-  NOTE: in order to do 3:
-  it's better to order cacheList by INCREASING cacheCount,
-  with smaller cacheCount in front ==> search cacheList
-  */
-} 
+// freeList empty case:
+/*
+3. find a minode in cacheList with shareCount=0 and the smallest cacheCount,
+set minode to (dev, ino), shareCount=1, cacheCount=1, modified=0
+return minode pointer;
+*/
+
+MINODE *smallestMip = NULL;
+
+// Traverse the cacheList to find the MINODE with smallest cacheCount and shareCount=0
+mip = cacheList;
+while (mip != NULL) {
+    if (mip->shareCount == 0 && (smallestMip == NULL || mip->cacheCount < smallestMip->cacheCount)) {
+        smallestMip = mip;
+        // Set minode to (dev, ino), shareCount=1, cacheCount=1, and modified=0
+        smallestMip->dev = dev;
+        smallestMip->ino = ino;
+        smallestMip->cacheCount = 1;
+        smallestMip->shareCount = 1;
+        smallestMip->modified = 0;
+
+    }
+    mip = mip->next;
+}
+    // Return minode pointer
+    return smallestMip;
+}
 
 int iput(MINODE *mip)  // release a mip
 {
