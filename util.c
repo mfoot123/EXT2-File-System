@@ -61,7 +61,10 @@ MINODE *iget(int dev, int ino)
 
   requests++;
 
+  // set mip equal to our cachelists
   mip = cacheList;
+
+  // run through the cacheList
   while (mip != NULL) {
     if (mip->shareCount && (mip->dev == dev) && (mip->ino == ino)) {
       // If found: 
@@ -78,34 +81,49 @@ MINODE *iget(int dev, int ino)
   }
 
   // Needed (dev, ino) NOT in cacheList
-  if (!freeList) {
-    // If freeList is empty, allocate a new MINODE
-    mip = (MINODE *)malloc(sizeof(MINODE));
-  } else {
-    // Otherwise, remove a minode from freeList
+
+  // 2. if (freeList NOT empty){
+  if (freeList) {
+    // remove a minode from freeList;
     mip = freeList;
     freeList = freeList->next;
-  }
 
-  // Set minode to (dev, ino), cacheCount=1 shareCount=1, and modified=0
-  mip->dev = dev;
-  mip->ino = ino;
-  mip->cacheCount = 1;
-  mip->shareCount = 1;
-  mip->modified = 0;
+    // Set minode to (dev, ino), cacheCount=1 shareCount=1, and modified=0
+    mip->dev = dev;
+    mip->ino = ino;
+    mip->cacheCount = 1;
+    mip->shareCount = 1;
+    mip->modified = 0;
 
-  // Add the new minode to the end of the cacheList
-  int j;
-  for (j = 0; j < NMINODE; j++) {
-    if (!minode[j].dev) {
-      minode[j] = *mip;
-      break;
+    // load INODE of (dev, ino) from disk into minode.INODE;
+    int blk = ((ino - 1) / inodes_per_block) + inodes_start;
+    int offset = (ino - 1) % inodes_per_block;
+    char buf[BLKSIZE];
+    get_block(dev, blk, buf);
+    INODE *ip = (INODE *)buf + offset;
+    mip->INODE = *ip;
+
+    // enter minode into cacheList;
+    for (int j = 0; j < NMINODE; j++) {
+      if (!minode[j].dev) {
+        minode[j] = *mip;
+        break;
+      }
     }
+    // Return minode pointer
+    return mip;
   }
 
-  // Return minode pointer
-  return mip;
-}
+  // freeList empty case:
+  /*
+  3. find a minode in cacheList with shareCount=0, cacheCount=SMALLEST
+  set minode to (dev, ino), shareCount=1, cacheCount=1, modified=0
+  return minode pointer;
+  NOTE: in order to do 3:
+  it's better to order cacheList by INCREASING cacheCount,
+  with smaller cacheCount in front ==> search cacheList
+  */
+} 
 
 int iput(MINODE *mip)  // release a mip
 {
@@ -175,7 +193,7 @@ MINODE *path2inode(char *pathname)
 {
   MINODE *mip = root;
   char buf[BLKSIZE];
-  int  ino, blk, offset;
+  int  ino, block, offset;
   /*******************
   return minode pointer of pathname;
   return 0 if pathname invalid;
@@ -195,13 +213,22 @@ MINODE *path2inode(char *pathname)
   // determine absolute or relative
 
   // tokenize the path
+  int num = tokenize(pathname);
+  // search to get to c
+  for (int i = 0; i < num; i++)
+  {
+    ino = search(mip, name[i]);
+      // call iget(dev, ino)
+  mip = iget(dev, ino);
 
-  // call search to get to c
+    if (ino == 0)
+    {
+      printf("can't find %s\n", name[i]);
+      exit(1);
+    }
 
-  // mailman’s algorithm
 
-  // call iget(dev, ino)
-
+  }
 }
 
 int findmyname(MINODE *pip, int myino, char myname[ ])
