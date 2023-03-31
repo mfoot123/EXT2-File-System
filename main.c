@@ -77,6 +77,7 @@ int main(int argc, char *argv[ ])
   // get super block of dev
   get_block(dev, 1, buf);
   SUPER *sp = (SUPER *)buf;  // you should check s_magic for EXT2 FS
+  printf("check: superblock magic = 0x%8x OK\n", sp);
 
   ninodes = sp->s_inodes_count;
   nblocks = sp->s_blocks_count;
@@ -107,6 +108,8 @@ int main(int argc, char *argv[ ])
 
   root = mip;           // root points at #2 INODE in minode[0]
 
+  printf("Creating P1 as running process\n");
+  printf("root shareCount= %d\n", root->shareCount);
   printf("set P1's CWD to root\n");
   running->cwd = root;           // CWD = root
   // Endhere ====================================================
@@ -117,12 +120,12 @@ int main(int argc, char *argv[ ])
   root         = iget(dev, 2);
   running->cwd = iget(dev, 2);
  **********************************************************/
-
+  
   while(1){
-     printf("P%d running\n", running->pid);
+     printf("P%d running: ", running->pid);
      pathname[0] = parameter[0] = 0;
 
-     printf("enter command [cd|ls|pwd|exit] : ");
+     printf("intput command line [cd|ls|pwd|exit] : ");
      fgets(line, 128, stdin);
      line[strlen(line)-1] = 0;    // kill \n at end
 
@@ -166,13 +169,13 @@ int show_dir(MINODE *mip)
 
   dp = (DIR *)sbuf;
   cp = sbuf;
-
+  printf("i_number  rec_len  name_len  name\n");
   while (cp < sbuf + BLKSIZE)
   {
     strncpy(temp, dp->name, dp->name_len);
     temp[dp->name_len] = 0;
 
-    printf("%4d %4d %4d %s\n", dp->inode, dp->rec_len, dp->name_len, temp);
+    printf(" %4d      %4d     %4d      %s\n", dp->inode, dp->rec_len, dp->name_len, temp);
 
     cp += dp->rec_len;
     if (dp->rec_len == 0)

@@ -210,23 +210,23 @@ MINODE *path2inode(char *pathname)
 {
   MINODE *mip = root;
   char buf[BLKSIZE];
-  int  ino, block, offset;
+  int ino, block, offset;
   /*******************
   return minode pointer of pathname;
   return 0 if pathname invalid;
 
   This is same as YOUR main loop in LAB5 without printing block numbers
   *******************/
-  if(strcmp(pathname, ".") == 0 || pathname == NULL)
+  if (strcmp(pathname, ".") == 0 || pathname == NULL)
   {
-    //return cwd
+    // return cwd
     return running->cwd;
   }
-  else if(strcmp(pathname, "..") == 0)
+  else if (strcmp(pathname, "..") == 0)
   {
-    // return parent inode
+    int tp = findino(running->cwd, ino);
+    return iget(running->cwd->dev, tp);
   }
-
   // determine absolute or relative
 
   // tokenize the path
@@ -234,6 +234,10 @@ MINODE *path2inode(char *pathname)
   // search to get to last var
   for (int i = 0; i < num; i++)
   {
+    if (!S_ISDIR(mip->INODE.i_mode))
+    {
+      return;
+    }
     ino = search(mip, name[i]);
     // call iget(dev, ino)
     mip = iget(dev, ino);
@@ -242,6 +246,7 @@ MINODE *path2inode(char *pathname)
       printf("can't find %s\n", name[i]);
       exit(1);
     }
+    iput(mip);
   }
 }
 

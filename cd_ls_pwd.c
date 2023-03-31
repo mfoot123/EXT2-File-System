@@ -58,6 +58,7 @@ int cd(char *pathname)
         iput(mip);
         return -1;
     }
+    printf("Test");
 
     // Release the old cwd
     iput(running->cwd);
@@ -140,52 +141,90 @@ void rpwd(MINODE *wd)
 
 int ls(char *pathname)
 {
-  MINODE *mip = running->cwd;
+    MINODE *mip = running->cwd;
+    ls_dir(mip);
+    iput(mip);
+    // MINODE *mip = running->cwd;
+    // int ino;
 
-  ls_dir(mip);
-  iput(mip);
+    // // the inode number of the specified path
+    // ino = path2inode(pathname);
+
+    // // get the MINODE corresponding to the inode number returned
+    // mip = iget(dev, ino);
+    // // store inode number in inode var
+    // INODE inode = mip->INODE;
+
+    // // check if its a file or directory
+    // if (S_ISDIR(inode.i_mode))
+    // {
+    //     // if its a directory call ls_dir
+    //     ls_dir(mip);
+    // }
+    // else
+    // {
+    //     // else call ls_file
+    //     ls_file(mip, name);
+    // }
+
+    // iput(minode);
+    // return 0;
 }
 
 int ls_file(MINODE *mip, char *name)
 {
-  // use mip->INODE to ls_file
+    char ftime[64];
+    struct stat fstat, *sp;
+    sp = &fstat;
+    // use mip->INODE to ls_file
 
-  // Check if the inode is a regular file
-  if (!S_ISREG(mip->INODE.i_mode))
-		putchar('-');
-  // Check if the inode is a directory
-	else if (!S_ISDIR(mip->INODE.i_mode))
-		putchar('d');
-  // Check if the inode is a link
-	else if (!S_ISLNK(mip->INODE.i_mode))
-		putchar('l');
+    // Check if the inode is a regular file
+    if (!S_ISREG(mip->INODE.i_mode))
+        putchar('-');
+    // Check if the inode is a directory
+    else if (!S_ISDIR(mip->INODE.i_mode))
+        putchar('d');
+    // Check if the inode is a link
+    else if (!S_ISLNK(mip->INODE.i_mode))
+        putchar('l');
 
-  // Print the file attributes
-  printf("%4d", mip->INODE.i_links_count);
-	printf("%4d", mip->INODE.i_uid);
-	printf("%4d", mip->INODE.i_gid);
-	printf("%8d", mip->INODE.i_size);
+    // Print the file attributes
+    printf("%4d", mip->INODE.i_links_count);
+    printf("%4d", mip->INODE.i_uid);
+    printf("%4d", mip->INODE.i_gid);
+    printf("%8d\t", mip->INODE.i_size);
 
-  return 0;
+    strcpy(ftime, ctime(&sp->st_ctime));
+    ftime[strlen(ftime) - 1] = 0;
+    printf("%s\t", ftime);
+
+    printf("%s\n", name);
+
+    return 0;
 }
 
 int ls_dir(MINODE *pip)
-{
+{  
   char sbuf[BLKSIZE], name[256];
   DIR  *dp;
   char *cp;
 
-  printf("simple ls_dir()\n");
+  printf("ls ./\n");
+  printf("tokensize: echo names: .\n");
+  printf("search for %s in inode# %d\n", pathname, pip->id);
 
   get_block(dev, pip->INODE.i_block[0], sbuf);
+  printf("i_block[0] = %d\n", iblk);
   dp = (DIR *)sbuf;
   cp = sbuf;
 
+  show_dir(pip);
+  printf("\n");
+  printf("i_block[0] = %d\n", iblk);
   while (cp < sbuf + BLKSIZE){
     strncpy(name, dp->name, dp->name_len);
     name[dp->name_len] = 0;
-    printf("%s\n",  name);
-
+    ls_file(pip, name);
     cp += dp->rec_len;
     dp = cp;
   }

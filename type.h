@@ -10,7 +10,7 @@
 #include <string.h>
 #include <libgen.h>
 #include <sys/stat.h>
-
+#include <time.h>
 #include <ext2fs/ext2_fs.h>
 
 // define shorter TYPES, save typing efforts
