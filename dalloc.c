@@ -55,4 +55,25 @@ int idalloc(int dev, int ino)  // deallocate an ino number
 int bdalloc(int dev, int blk) // deallocate a blk number
 {
   // WRITE YOUR OWN CODE to deallocate a block number blk
+  char buf[BLKSIZE];
+
+  // get block bitmap block
+  get_block(dev, BBITMAP, buf);
+
+  // clear bit for the given block
+  clr_bit(buf, blk - 1);
+
+  // write the block bitmap block back to disk
+  put_block(dev, BBITMAP, buf);
+
+  // update free block count in superblock and group descriptor
+  get_block(dev, 1, buf);
+  sp = (SUPER *)buf;
+  sp->s_free_blocks_count++;
+  put_block(dev, 1, buf);
+
+  get_block(dev, 2, buf);
+  gp = (GD *)buf;
+  gp->bg_free_blocks_count++;
+  put_block(dev, 2, buf);
 }
