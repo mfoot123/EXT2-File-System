@@ -116,7 +116,6 @@ int main(int argc, char *argv[ ])
 
  /********* write code for iget()/iput() in util.c **********
           Replace code between HERE and ENDhere with
-
   root         = iget(dev, 2);
   running->cwd = iget(dev, 2);
  **********************************************************/

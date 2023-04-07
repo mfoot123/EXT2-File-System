@@ -19,6 +19,10 @@ typedef struct ext2_group_desc  GD;
 typedef struct ext2_inode       INODE;
 typedef struct ext2_dir_entry_2 DIR;
 
+SUPER *sp;
+GD    *gp;
+INODE *ip;
+
 #define BLKSIZE           1024
 
 #define NPROC                2
