@@ -141,34 +141,42 @@ void rpwd(MINODE *wd)
 
 int ls(char *pathname)
 {
+    
     MINODE *mip = running->cwd;
-    ls_dir(mip);
-    iput(mip);
+    if (!strcmp(pathname, "")){
+        ls_dir(mip);
+        return 0;
+    }
+    //    ls_dir(mip);
+    // iput(mip);
     // MINODE *mip = running->cwd;
-    // int ino;
+    int ino;
 
-    // // the inode number of the specified path
-    // ino = path2inode(pathname);
+    // the inode number of the specified path
+    ino = path2inode(pathname);
 
-    // // get the MINODE corresponding to the inode number returned
-    // mip = iget(dev, ino);
-    // // store inode number in inode var
-    // INODE inode = mip->INODE;
+    // get the MINODE corresponding to the inode number returned
+    mip = iget(dev, ino);
+    // store inode number in inode var
+    INODE inode = mip->INODE;
 
-    // // check if its a file or directory
-    // if (S_ISDIR(inode.i_mode))
-    // {
-    //     // if its a directory call ls_dir
-    //     ls_dir(mip);
-    // }
-    // else
-    // {
-    //     // else call ls_file
-    //     ls_file(mip, name);
-    // }
+    // check if its a file or directory
+    if (S_ISDIR(inode.i_mode))
+    {
+        // if its a directory call ls_dir
+        ls_dir(mip);
+    }
+    else if(S_ISREG(inode.i_mode)){
+        ls_file(mip, name);
+    }
+    else
+    {
+        printf("Error, not a file or directory");
+        return 0;
+    }
 
-    // iput(minode);
-    // return 0;
+    iput(minode);
+    return 0;
 }
 
 int ls_file(MINODE *mip, char *name)
@@ -185,20 +193,46 @@ int ls_file(MINODE *mip, char *name)
     else if (!S_ISDIR(mip->INODE.i_mode))
         putchar('d');
     // Check if the inode is a link
-    else if (!S_ISLNK(mip->INODE.i_mode))
+    else if (!S_ISLNK(mip->INODE.i_mode)){
         putchar('l');
+    }
+
+    if(mip->INODE.i_mode & 0x0001)
+    {
+        putchar('x');
+    }
+    else{
+        putchar('-');
+    }
+
+    if(mip->INODE.i_mode & 0x0002){
+        putchar('w');
+    }
+    else{
+        putchar('-');
+    }
+
+    if(mip->INODE.i_mode & 0x0004){
+        putchar('r');
+    }
+    else{
+        putchar('-');
+    }
 
     // Print the file attributes
     printf("%4d", mip->INODE.i_links_count);
     printf("%4d", mip->INODE.i_uid);
     printf("%4d", mip->INODE.i_gid);
-    printf("%8d\t", mip->INODE.i_size);
 
-    strcpy(ftime, ctime(&sp->st_ctime));
+    strcpy(ftime, ctime((time_t*)&(mip->INODE.i_mtime)));
     ftime[strlen(ftime) - 1] = 0;
-    printf("%s\t", ftime);
+    printf("%s  ", ftime);
 
-    printf("%s\n", name);
+    printf("%8d  ", mip->INODE.i_size);
+
+    printf("%s  ", name);
+
+    printf("[%d %d]\n", mip->dev, mip->ino);
 
     return 0;
 }
@@ -214,21 +248,22 @@ int ls_dir(MINODE *pip)
   printf("search for %s in inode# %d\n", pathname, pip->id);
 
   get_block(dev, pip->INODE.i_block[0], sbuf);
-  printf("i_block[0] = %d\n", iblk);
+  printf("i_block[0] = %d\n", pip->INODE.i_block[0]);
   dp = (DIR *)sbuf;
   cp = sbuf;
 
   show_dir(pip);
   printf("\n");
   printf("i_block[0] = %d\n", iblk);
+  MINODE *pipAssist = pip;
   while (cp < sbuf + BLKSIZE){
-    strncpy(name, dp->name, dp->name_len);
-    name[dp->name_len] = 0;
-    ls_file(pip, name);
-    cp += dp->rec_len;
-    dp = cp;
+        strncpy(name, dp->name, dp->name_len);
+        name[dp->name_len] = 0;
+        pipAssist = iget(dev, dp->inode);
+        ls_file(pipAssist, name);
+        cp += dp->rec_len;
+        dp = cp;
   }
-
 }
 
 /***************************************************/
