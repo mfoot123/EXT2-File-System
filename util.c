@@ -1,28 +1,5 @@
 #include "type.h"
 
-/*********** globals in main.c ***********/
-extern PROC   proc[NPROC];
-extern PROC   *running;
-
-extern MINODE minode[NMINODE];   // minodes
-extern MINODE *freeList;         // free minodes list
-extern MINODE *cacheList;        // cacheCount minodes list
-
-extern MINODE *root;
-
-extern OFT    oft[NOFT];
-
-extern char gline[256];   // global line hold token strings of pathname
-extern char *name[64];    // token string pointers
-extern int  n;            // number of token strings
-
-extern int ninodes, nblocks;
-extern int bmap, imap, inodes_start, iblk;  // bitmap, inodes block numbers
-
-extern int  fd, dev;
-extern char cmd[16], pathname[128], parameter[128];
-extern int  requests, hits;
-
 /**************** util.c file **************/
 
 int get_block(int dev, int blk, char buf[ ])

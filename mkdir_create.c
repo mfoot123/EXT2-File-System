@@ -118,3 +118,57 @@ int make_dir(char *pathname)
     return 0;
 }
 
+int mymkdir(MINODE *pip, char *name)
+{
+
+  // 1. pip points at the parent minode[] of "/a/b", name is a string "c"
+
+  //  2. allocate an inode and a disk block for the new directory;
+
+  // 4. Write contents to mip->INODE to make it a DIR INODE. Mark it modified;
+
+  // 3. MINODE *mip = iget(dev, ino); o
+  //load inode into a minode[] (in order t0 write contents to the INODE in memory.
+  MINODE *mip = iget(dev,ino); 
+  INODE *ip = &mip->INODE;
+
+  ip->i_mode = 0x41ED;		// OR 040755: DIR type and permissions
+  ip->i_uid  = running->uid;	// Owner uid 
+  ip->i_gid  = running->gid;	// Group Id
+  ip->i_size = BLKSIZE;		// Size in bytes 
+  ip->i_links_count = 2;	        // Links count=2 because of . and ..
+  ip->i_atime = ip->i_ctime = ip->i_mtime = time(0L);  // set to current time
+  ip->i_blocks = 2;                	// LINUX: Blocks count in 512-byte chunks 
+  ip->i_block[0] = bno;             // new DIR has one data block   
+
+  //i_block[1] to i_block[14] = 0;
+  for(int i = 1; i < 15; i++)
+  {
+    ip->i_block[i] = 0;
+  }
+ 
+  mip->modified = 1;            // mark minode MODIFIED
+  // 5. iput(mip); which writes the new INODE out to disk.
+  iput(mip);
+
+  // 6. Write . and .. entries to a buf[ ] of BLKSIZE
+  // Then, write buf[ ] to the disk block bno;
+
+  // 7. Finally, enter name ENTRY into parent's directory by 
+  // enter_child(pip, ino, name);
+
+  // 8. int enter_child(MINODE *pip, int myino, char *myname)
+  // (1). NEED_LEN = 4*[ (8 + strlen(myname) + 3)/4 ]; // a multiple of 4
+  // (2). For each data block of parent DIR do { // assume: only 12 direct blocks
+    // if (i_block[i]==0) BREAK;
+    // get parent's data block into a buf[ ]
+    // Each DIR entry has rec_len, name_len. Each entry's ideal length is
+    // IDEAL_LEN = 4*[ (8 + name_len + 3)/4 ]     // multiple of 4
+  // (3). Step through each DIR entry dp in parent data block:
+  // compute REMAIN = dp->rec_len - IDEAL_LEN;
+  // if (REMAIN >= NEED_LEN){      // found enough space for new entry
+  // dp->rec_len = IDEAL_LEN;   // trim dp's rec_len to its IDEAL_LEN
+  // enter new_entry as [myino, REMIN, strlen(myname), myname]
+  
+}
+
