@@ -75,7 +75,7 @@ int balloc(int dev) {
 int make_dir(char *pathname)
 {
     char *parent_pathname, *child_name, *temp_pathname;
-    MINODE *parent_inode;
+    MINODE *pip;
     int parent, child;
     
     // Extract parent directory pathname and child name
@@ -89,23 +89,31 @@ int make_dir(char *pathname)
     child_name = basename(pathname);
     
     // Get parent directory inode
-    parent_inode = path2inode(parent_pathname);
+    pip = path2inode(parent_pathname);
+    if (!pip || !S_ISDIR(pip->INODE.i_mode)) {
+      printf("Error: Parent directory does not exist or is not a directory.\n");
+      return -1;
+    }
     
     // Verify that child name does not already exist in parent directory
-    child = get_inode_number(parent_inode, child_name);
+    child = get_inode_number(pip, child_name);
+    if (child) {
+      printf("Error: A file or directory with the same name already exists in the parent directory.\n");
+      iput(pip);
+      return -1;
+    }
     
     // Create new directory using mymkdir() function
-    parent = parent_inode->ino;
-    mymkdir(parent_inode, child_name);
+    parent = pip->ino;
+    mymkdir(pip, child_name);
     
     // Update parent directory metadata
-    parent_inode->INODE.i_links_count++;
-    parent_inode->INODE.i_atime = time(0L);
-    parent_inode->INODE.i_mtime = time(0L);
-    parent_inode->modified = 1;
+    pip->INODE.i_links_count++;
+    pip->INODE.i_atime = time(0L);
+    pip->modified = 1;
     
     // Release parent directory inode
-    iput(parent_inode);
+    iput(pip);
     
     return 0;
 }
