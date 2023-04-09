@@ -38,8 +38,6 @@ int idalloc(int dev, int ino)  // deallocate an ino number
   int i;  
   char buf[BLKSIZE];
 
-  // return 0 if ino < 0 OR > ninodes
-
   // get inode bitmap block
   get_block(dev, bmap, buf);
   clr_bit(buf, ino-1);
@@ -58,13 +56,13 @@ int bdalloc(int dev, int blk) // deallocate a blk number
   char buf[BLKSIZE];
 
   // get block bitmap block
-  get_block(dev, BBITMAP, buf);
+  get_block(dev, BITMAP, buf);
 
   // clear bit for the given block
   clr_bit(buf, blk - 1);
 
   // write the block bitmap block back to disk
-  put_block(dev, BBITMAP, buf);
+  put_block(dev, BITMAP, buf);
 
   // update free block count in superblock and group descriptor
   get_block(dev, 1, buf);

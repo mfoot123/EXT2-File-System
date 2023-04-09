@@ -16,9 +16,6 @@ char gline[256];          // global line hold token strings of pathname
 char *name[64];           // token string pointers
 int  n;                   // number of token strings
 
-int ninodes, nblocks;     // ninodes, nblocks from SUPER block
-int bmap, imap, inodes_start, iblk;  // bitmap, inodes block numbers
-
 int  fd, dev;
 char cmd[16], pathname[128], parameter[128];
 int  requests, hits;
@@ -124,7 +121,7 @@ int main(int argc, char *argv[ ])
      printf("P%d running: ", running->pid);
      pathname[0] = parameter[0] = 0;
 
-     printf("intput command line [cd|ls|pwd|exit] : ");
+     printf("input command [cd|ls|pwd|mkdir|creat|rmdir |show|hits|exit] :");
      fgets(line, 128, stdin);
      line[strlen(line)-1] = 0;    // kill \n at end
 

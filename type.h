@@ -32,6 +32,9 @@ INODE *ip;
 
 #define inodes_per_block    8
 
+int ninodes, nblocks;     // ninodes, nblocks from SUPER block
+int bmap, imap, inodes_start, iblk;  // bitmap, inodes block numbers
+
 // In-memory inodes structure
 typedef struct minode{
   INODE INODE;            // disk INODE

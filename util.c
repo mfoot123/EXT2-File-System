@@ -228,6 +228,10 @@ MINODE *path2inode(char *pathname)
     return iget(running->cwd->dev, tp);
   }
   // determine absolute or relative
+  else if (strcmp(pathname, "/") == 0)
+  {
+    mip = running->cwd;
+  }
 
   // tokenize the path
   int num = tokenize(pathname);
