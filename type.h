@@ -32,29 +32,6 @@ INODE *ip;
 
 #define inodes_per_block    8
 
-/*********** globals in main.c ***********/
-extern PROC   proc[NPROC];
-extern PROC   *running;
-
-extern MINODE minode[NMINODE];   // minodes
-extern MINODE *freeList;         // free minodes list
-extern MINODE *cacheList;        // cacheCount minodes list
-
-extern MINODE *root;
-
-extern OFT    oft[NOFT];
-
-extern char gline[256];   // global line hold token strings of pathname
-extern char *name[64];    // token string pointers
-extern int  n;            // number of token strings
-
-extern int ninodes, nblocks;
-extern int bmap, imap, inodes_start, iblk;  // bitmap, inodes block numbers
-
-extern int  fd, dev;
-extern char cmd[16], pathname[128], parameter[128];
-extern int  requests, hits;
-
 // In-memory inodes structure
 typedef struct minode{
   INODE INODE;            // disk INODE
@@ -99,5 +76,38 @@ MINODE *mntDirPtr; // mount point DIR pointer
 char devName[64]; //device name
 char mntName[64]; // mount point DIR name
 }MTABLE;
+
+/*********** globals in main.c ***********/
+extern PROC   proc[NPROC];
+extern PROC   *running;
+
+extern MINODE minode[NMINODE];   // minodes
+extern MINODE *freeList;         // free minodes list
+extern MINODE *cacheList;        // cacheCount minodes list
+
+extern MINODE *root;
+
+extern OFT    oft[NOFT];
+
+extern char gline[256];   // global line hold token strings of pathname
+extern char *name[64];    // token string pointers
+extern int  n;            // number of token strings
+
+extern int ninodes, nblocks;
+extern int bmap, imap, inodes_start, iblk;  // bitmap, inodes block numbers
+
+extern int  fd, dev;
+extern char cmd[16], pathname[128], parameter[128];
+extern int  requests, hits;
+
+int get_block(int dev, int blk, char buf[ ]);
+int put_block(int dev, int blk, char buf[ ]);
+int tokenize(char *pathname);
+MINODE *iget(int dev, int ino);
+int iput(MINODE *mip);
+int search(MINODE *mip, char *name);
+MINODE *path2inode(char *pathname);
+int findmyname(MINODE *pip, int myino, char myname[ ]);
+int findino(MINODE *mip, int *myino);
 
 #endif
