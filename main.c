@@ -1,20 +1,23 @@
 #include "type.h"
 
-/********** globals **************/
+/*********** globals in main.c ***********/
 PROC   proc[NPROC];
 PROC   *running;
 
-MINODE minode[NMINODE];   // in memory INODES
+MINODE minode[NMINODE];   // minodes
 MINODE *freeList;         // free minodes list
-MINODE *cacheList;        // cached minodes list
+MINODE *cacheList;        // cacheCount minodes list
 
-MINODE *root;             // root minode pointer
+MINODE *root;
 
-OFT    oft[NOFT];         // for level-2 only
+OFT    oft[NOFT];
 
-char gline[256];          // global line hold token strings of pathname
-char *name[64];           // token string pointers
-int  n;                   // number of token strings
+char gline[256];   // global line hold token strings of pathname
+char *name[64];    // token string pointers
+int  n;            // number of token strings
+
+int ninodes, nblocks;
+int bmap, imap, inodes_start, iblk;  // bitmap, inodes block numbers
 
 int  fd, dev;
 char cmd[16], pathname[128], parameter[128];
@@ -26,6 +29,7 @@ int enqueue(MINODE** queue, MINODE* insert);
 // start up files
 #include "util.c"
 #include "cd_ls_pwd.c"
+#include "mkdir_create.c"
 
 int init()
 {
@@ -133,10 +137,15 @@ int main(int argc, char *argv[ ])
 
      if (strcmp(cmd, "ls")==0)
         ls(pathname);
-     if (strcmp(cmd, "cd")==0)
+     else if (strcmp(cmd, "cd")==0)
         cd(pathname);
-     if (strcmp(cmd, "pwd")==0)
+     else if (strcmp(cmd, "pwd")==0)
         pwd(running->cwd);
+     else if (strcmp(cmd, "mkdir")==0)
+        make_dir(pathname);
+     //else if (strcmp(cmd, "create")==0)
+        
+     //else if (strcmp(cmd, "rmdir")==0)
 
 
      if (strcmp(cmd, "show")==0)
