@@ -147,8 +147,7 @@ int iput(MINODE *mip)  // release a mip
   mip->shareCount = 0;
 }
 
-int search(MINODE *mip, char *name)
-{
+int search(MINODE *mip, char *name) {
   /******************
   search mip->INODE data blocks for name:
   if (found) return its inode number;
@@ -157,31 +156,38 @@ int search(MINODE *mip, char *name)
   int i;
   char *cp, temp[256], sbuf[BLKSIZE];
   DIR *dp;
-  for (i=0; i<12; i++){ // search DIR direct blocks only
 
-    if (mip->INODE.i_block[i] == 0)
-    return 0;
+  for (i = 0; i < 12; i++) { // search DIR direct blocks only
+    if (mip->INODE.i_block[i] == 0) {
+      return 0;
+    }
 
     // search mip->INODE data blocks for name:
     get_block(mip->dev, mip->INODE.i_block[i], sbuf);
     dp = (DIR *)sbuf;
     cp = sbuf;
-    while (cp < sbuf + BLKSIZE){
+
+    while (cp < sbuf + BLKSIZE) {
       strncpy(temp, dp->name, dp->name_len);
       temp[dp->name_len] = 0;
       printf("%8d%8d%8u %s\n",
-      dp->inode, dp->rec_len, dp->name_len, temp);
-      if (strcmp(name, temp)==0){
-      printf("found %s : inumber = %d\n", name, dp->inode);
-      // if (found) return its inode number;
-      return dp->inode;
+             dp->inode, dp->rec_len, dp->name_len, temp);
+
+      if (strcmp(name, temp) == 0) {
+        printf("found %s : inumber = %d\n", name, dp->inode);
+        // if (found) return its inode number;
+        return dp->inode;
       }
+
       cp += dp->rec_len;
       dp = (DIR *)cp;
     }
   }
+
   return 0;
 }
+
+
 
 MINODE *path2inode(char *pathname)
 {

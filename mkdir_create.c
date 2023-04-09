@@ -1,5 +1,8 @@
 #include "type.h"
 
+/****************************************************HELPER FUNCTIONS******************************************************/
+
+
 // src: textbook
 // tst_bit, set_bit functions
 int tst_bit(char *buf, int bit){
@@ -63,7 +66,7 @@ int balloc(int dev) {
     if (!tst_bit(buf, i)) {
       set_bit(buf, i);
       put_block(dev, bmap, buf);
-      decFreeBlocks(dev);
+      decFreeInodes(dev);
       printf("balloc: block=%d\n", i + 1);
       return i + 1;
     }
@@ -72,51 +75,9 @@ int balloc(int dev) {
   return 0;
 }
 
-int make_dir(char *pathname)
-{
-    char *parent_pathname, *child_name, *temp_pathname;
-    MINODE *pip;
-    int parent, child;
-    
-    // Extract parent directory pathname and child name
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // WARNING: strtok(), dirname(), basename() destroy pathname
-    // so duplicate the pathname before 
-    temp_pathname = strdup(pathname);
-    // parent = dirname(pathname);   parent= "/a/b" OR "a/b"
-    parent_pathname = dirname(temp_pathname);
-    // child  = basename(pathname);  child = "c"
-    child_name = basename(pathname);
-    
-    // Get parent directory inode
-    pip = path2inode(parent_pathname);
-    if (!pip || !S_ISDIR(pip->INODE.i_mode)) {
-      printf("Error: Parent directory does not exist or is not a directory.\n");
-      return -1;
-    }
-    
-    // Verify that child name does not already exist in parent directory
-    child = get_inode_number(pip, child_name);
-    if (child) {
-      printf("Error: A file or directory with the same name already exists in the parent directory.\n");
-      iput(pip);
-      return -1;
-    }
-    
-    // Create new directory using mymkdir() function
-    parent = pip->ino;
-    mymkdir(pip, child_name);
-    
-    // Update parent directory metadata
-    pip->INODE.i_links_count++;
-    pip->INODE.i_atime = time(0L);
-    pip->modified = 1;
-    
-    // Release parent directory inode
-    iput(pip);
-    
-    return 0;
-}
+/******************************************************MAKE DIR************************************************************/
 
 int mymkdir(MINODE *pip, char *name)
 {
@@ -263,3 +224,164 @@ int enter_child(MINODE *pip, int myino, char *myname)
     return -1; // failure: no space in parent's data blocks
 }
 
+int make_dir(char *pathname)
+{
+    char *parent_pathname, *child_name, *temp_pathname;
+    MINODE *pip;
+    int parent, child;
+    
+    // Extract parent directory pathname and child name
+
+    // WARNING: strtok(), dirname(), basename() destroy pathname
+    // so duplicate the pathname before 
+    temp_pathname = strdup(pathname);
+    // parent = dirname(pathname);   parent= "/a/b" OR "a/b"
+    parent_pathname = dirname(temp_pathname);
+    // child  = basename(pathname);  child = "c"
+    child_name = basename(pathname);
+    
+    // Get parent directory inode
+    pip = path2inode(parent_pathname);
+    if (!pip || !S_ISDIR(pip->INODE.i_mode)) {
+      printf("Error: Parent directory does not exist or is not a directory.\n");
+      return -1;
+    }
+    
+    // Verify that child name does not already exist in parent directory
+    child = search(pip, child_name);
+    if (child) {
+      printf("Error: A file or directory with the same name already exists in the parent directory.\n");
+      iput(pip);
+      return -1;
+    }
+    
+    // Create new directory using mymkdir() function
+    parent = pip->ino;
+    mymkdir(pip, child_name);
+    
+    // Update parent directory metadata
+    pip->INODE.i_links_count++;
+    pip->INODE.i_atime = time(0L);
+    pip->modified = 1;
+    
+    // Release parent directory inode
+    iput(pip);
+    
+    return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/******************************************************CREATE DIR**********************************************************/
+
+int my_creat(MINODE *pip, char *name)
+{
+  int ino;
+  char buf[BLKSIZE], temp[256];
+  DIR* dp;
+
+  // 1. pip points at the parent minode[] of "/a/b", name is a string "c"
+
+  char *path = "/a/b";
+  char *parent_path = dirname(path); // parent_path is now "/a"
+
+  // Find the inode of the parent directory "/a"
+  MINODE *parent_mip = path2inode(parent_path);
+  if (parent_mip == NULL) {
+      printf("Error: directory %s does not exist\n", parent_path);
+      return -1;
+  }
+
+  // Get the MINODE structure for the parent inode
+  pip = iget(root->dev, parent_mip->ino);
+
+  //  2. allocate an inode for the new file
+  ino = ialloc(dev);   // Allocate a new inode on the device
+
+  // 3. MINODE *mip = iget(dev, ino); o
+  //load inode into a minode[] (in order t0 write contents to the INODE in memory.
+  MINODE *mip = iget(dev,ino); 
+  INODE *ip = &mip->INODE;
+
+  // 4. Write contents to mip->INODE to make it a REG INODE. Mark it modified;
+
+  ip->i_mode = 0x81A4;		// OR 0100644: REG type and permissions
+  ip->i_uid  = running->uid;	// Owner uid 
+  ip->i_gid  = running->gid;	// Group Id
+  ip->i_size = 0;		// Size in bytes 
+  ip->i_links_count = 1;	        // Links count=1 because it's a file
+  ip->i_atime = ip->i_ctime = ip->i_mtime = time(0L);  // set to current time
+  // No data blocks allocated yet
+  for(int i = 0; i < 15; i++)
+  {
+    ip->i_block[i] = 0;
+  }
+ 
+  mip->modified = 1;            // mark minode MODIFIED
+  // 5. iput(mip); which writes the new INODE out to disk.
+  iput(mip);
+
+  // 6. Enter name ENTRY into parent's directory by 
+  // enter_child(pip, ino, name);
+  enter_child(pip, ino, name);
+  
+  return 0;
+}
+
+
+int creat_file(char *pathname)
+{
+    char *parent_pathname, *child_name, *temp_pathname;
+    MINODE *pip;
+    int parent, child;
+    
+    // Extract parent directory pathname and child name
+
+    // WARNING: strtok(), dirname(), basename() destroy pathname
+    // so duplicate the pathname before 
+    temp_pathname = strdup(pathname);
+    // parent = dirname(pathname);   parent= "/a/b" OR "a/b"
+    parent_pathname = dirname(temp_pathname);
+    // child  = basename(pathname);  child = "c"
+    child_name = basename(pathname);
+    
+    // Get parent directory inode
+    pip = path2inode(parent_pathname);
+    if (!pip || !S_ISDIR(pip->INODE.i_mode)) {
+      printf("Error: Parent directory does not exist or is not a directory.\n");
+      return -1;
+    }
+    
+    // Verify that child name does not already exist in parent directory
+    child = search(pip, child_name);
+    if (child) {
+      printf("Error: A file or directory with the same name already exists in the parent directory.\n");
+      iput(pip);
+      return -1;
+    }
+    
+    // Create new file using my_creat() function
+    parent = pip->ino;
+    my_creat(pip, child_name);
+    
+    // Update file inode metadata
+    child = search(pip, child_name);
+    MINODE *mip = iget(pip->dev, child);
+    mip->INODE.i_mode = 0x81A4;
+    mip->INODE.i_size = 0;
+    mip->INODE.i_links_count = 1;
+    mip->INODE.i_atime = time(0L);
+    mip->INODE.i_ctime = time(0L);
+    mip->INODE.i_mtime = time(0L);
+    mip->INODE.i_uid = running->uid;
+    mip->INODE.i_gid = running->gid;
+    mip->modified = 1;
+    iput(mip);
+    
+    // Release parent directory inode
+    iput(pip);
+    
+    return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
