@@ -100,6 +100,7 @@ extern int  fd, dev;
 extern char cmd[16], pathname[128], parameter[128];
 extern int  requests, hits;
 
+// util.c
 int get_block(int dev, int blk, char buf[ ]);
 int put_block(int dev, int blk, char buf[ ]);
 int tokenize(char *pathname);
@@ -109,5 +110,15 @@ int search(MINODE *mip, char *name);
 MINODE *path2inode(char *pathname);
 int findmyname(MINODE *pip, int myino, char myname[ ]);
 int findino(MINODE *mip, int *myino);
+
+// dalloc.c
+int tst_bit(char *buf, int bit);
+int set_bit(char *buf, int bit);
+int clr_bit(char *buf, int bit);
+int incFreeInodes(int dev);
+int idalloc(int dev, int ino);
+int bdalloc(int dev, int blk);
+int rmdir(const char *pathname);
+int rm_child(MINODE *parent, char *name);
 
 #endif
