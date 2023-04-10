@@ -58,7 +58,6 @@ int cd(char *pathname)
         iput(mip);
         return -1;
     }
-    printf("Test");
 
     // Release the old cwd
     iput(running->cwd);
