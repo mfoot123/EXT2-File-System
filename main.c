@@ -30,6 +30,7 @@ int enqueue(MINODE** queue, MINODE* insert);
 #include "util.c"
 #include "cd_ls_pwd.c"
 #include "mkdir_create.c"
+#include "dalloc.c"
 
 int init()
 {
@@ -143,10 +144,10 @@ int main(int argc, char *argv[ ])
         pwd(running->cwd);
      else if (strcmp(cmd, "mkdir")==0)
         make_dir(pathname);
-     //else if (strcmp(cmd, "create")==0)
-        
-     //else if (strcmp(cmd, "rmdir")==0)
-
+     else if (strcmp(cmd, "create")==0)
+        creat_file(pathname);
+     else if (strcmp(cmd, "rmdir")==0)
+        rmdir(pathname);
 
      if (strcmp(cmd, "show")==0)
         show_dir(running->cwd);
