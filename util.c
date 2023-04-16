@@ -81,12 +81,9 @@ MINODE *iget(int dev, int ino)
     mip->INODE = *ip;
 
     // enter minode into cacheList;
-    for (int j = 0; j < NMINODE; j++) {
-      if (!minode[j].dev) {
-        minode[j] = *mip;
-        break;
-      }
-    }
+    mip->next = cacheList;
+    cacheList = mip;
+
     // Return minode pointer
     return mip;
   }
@@ -148,21 +145,15 @@ int iput(MINODE *mip)  // release a mip
 }
 
 int search(MINODE *mip, char *name) {
-  /******************
-  search mip->INODE data blocks for name:
-  if (found) return its inode number;
-  else       return 0;
-  ******************/
   int i;
   char *cp, temp[256], sbuf[BLKSIZE];
   DIR *dp;
 
   for (i = 0; i < 12; i++) { // search DIR direct blocks only
     if (mip->INODE.i_block[i] == 0) {
-      return 0;
+      break;
     }
 
-    // search mip->INODE data blocks for name:
     get_block(mip->dev, mip->INODE.i_block[i], sbuf);
     dp = (DIR *)sbuf;
     cp = sbuf;
@@ -175,8 +166,7 @@ int search(MINODE *mip, char *name) {
 
       if (strcmp(name, temp) == 0) {
         printf("found %s : inumber = %d\n", name, dp->inode);
-        // if (found) return its inode number;
-        return dp->inode;
+        return dp->inode; // return inode number when file/directory is found
       }
 
       cp += dp->rec_len;
@@ -184,7 +174,7 @@ int search(MINODE *mip, char *name) {
     }
   }
 
-  return 0;
+  return 0; // return 0 if file/directory is not found
 }
 
 
