@@ -121,4 +121,8 @@ int bdalloc(int dev, int blk);
 int rmdir(const char *pathname);
 int rm_child(MINODE *parent, char *name);
 
+// mkdir_creat
+int enter_child(MINODE *pip, int myino, char *myname);
+int my_creat(MINODE *pip, char *name);
+
 #endif
