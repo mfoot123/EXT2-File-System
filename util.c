@@ -42,7 +42,7 @@ MINODE *iget(int dev, int ino)
   mip = cacheList;
 
   // run through the cacheList
-  while (mip != NULL) {
+  while (mip != NULL || mip->next != mip->next->next) {
     if (mip->shareCount && (mip->dev == dev) && (mip->ino == ino)) {
       // If found: 
       //increment minode's cacheCount and shareCount
@@ -182,50 +182,60 @@ int search(MINODE *mip, char *name) {
 MINODE *path2inode(char *pathname)
 {
   MINODE *mip = root;
-  char buf[BLKSIZE];
-  int ino, block, offset;
+  int ino = 0; // Initialize ino to 0
+  int num;
+
   /*******************
   return minode pointer of pathname;
   return 0 if pathname invalid;
 
   This is same as YOUR main loop in LAB5 without printing block numbers
   *******************/
-  if (strcmp(pathname, ".") == 0 || pathname == NULL)
+  if (pathname == NULL || strcmp(pathname, ".") == 0)
   {
     // return cwd
     return running->cwd;
   }
   else if (strcmp(pathname, "..") == 0)
   {
-    int tp = findino(running->cwd, ino);
-    return iget(running->cwd->dev, tp);
+    // get parent inode
+    int parent_ino = findino(running->cwd, &ino);
+    return iget(dev, parent_ino);
   }
-  // determine absolute or relative
-  else if (strcmp(pathname, "/") == 0)
+  else if (pathname[0] == '/')
   {
-    mip = running->cwd;
+    mip = iget(dev, 2);
   }
 
   // tokenize the path
-  int num = tokenize(pathname);
+  num = tokenize(pathname);
+
   // search to get to last var
   for (int i = 0; i < num; i++)
   {
     if (!S_ISDIR(mip->INODE.i_mode))
     {
-      return;
+      iput(mip);
+      return NULL;
     }
+
     ino = search(mip, name[i]);
-    // call iget(dev, ino)
-    mip = iget(dev, ino);
+
     if (ino == 0)
     {
-      printf("can't find %s\n", name[i]);
-      exit(1);
+      iput(mip);
+      return NULL;
     }
-    iput(mip);
+
+    iput(mip); // Don't release the inode yet
+    mip = iget(dev, ino);
   }
+
+  return mip;
 }
+
+
+
 
 int findmyname(MINODE *pip, int myino, char myname[ ])
 {
