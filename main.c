@@ -26,11 +26,14 @@ int  requests, hits;
 MINODE* dequeue(MINODE* queue);
 int enqueue(MINODE** queue, MINODE* insert);
 
+char* oldFile, newFile;
+
 // start up files
 #include "util.c"
 #include "cd_ls_pwd.c"
 #include "mkdir_create.c"
 #include "dalloc.c"
+#include "link_unlink.c"
 
 int init()
 {
@@ -126,7 +129,7 @@ int main(int argc, char *argv[ ])
      printf("P%d running: ", running->pid);
      pathname[0] = parameter[0] = 0;
 
-     printf("input command [cd|ls|pwd|mkdir|creat|rmdir |show|hits|exit] :");
+     printf("input command [cd|ls|pwd|mkdir|creat|rmdir|link|unlink|symlink |show|hits|exit] :");
      fgets(line, 128, stdin);
      line[strlen(line)-1] = 0;    // kill \n at end
 
@@ -148,6 +151,25 @@ int main(int argc, char *argv[ ])
         creat_file(pathname);
      else if (strcmp(cmd, "rmdir")==0)
         rmdir(pathname);
+      else if (strcmp(cmd, "link")==0)
+      {
+        printf("What is the name of the old file? ");
+        fgets(oldFile, 128, stdin);
+        prinf("\n What is the name of the new file? ");
+        fgets(newFile, 128, stdin);
+        link(oldFile, newFile);
+      }
+      else if (strcmp(cmd, "unlink")==0)
+        unlink(pathname);
+      else if (strcmp(cmd, "unlink")==0)
+      {
+        printf("What is the name of the old file? ");
+        fgets(oldFile, 128, stdin);
+        prinf("\n What is the name of the new file? ");
+        fgets(newFile, 128, stdin);
+        symlink(oldFile, newFile);
+      }
+        
 
      if (strcmp(cmd, "show")==0)
         show_dir(running->cwd);
