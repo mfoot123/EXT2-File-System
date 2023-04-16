@@ -111,7 +111,7 @@ int main(int argc, char *argv[ ])
   root = mip;           // root points at #2 INODE in minode[0]
 
   printf("Creating P1 as running process\n");
-  printf("root shareCount= %d\n", root->shareCount);
+  printf("root shareCount = %d\n", root->shareCount);
   printf("set P1's CWD to root\n");
   running->cwd = root;           // CWD = root
   // Endhere ====================================================
