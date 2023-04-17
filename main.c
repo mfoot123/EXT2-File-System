@@ -33,7 +33,7 @@ char* oldFile, newFile;
 #include "cd_ls_pwd.c"
 #include "mkdir_create.c"
 #include "dalloc.c"
-#include "link_unlink.c"
+//#include "link_unlink.c"
 
 int init()
 {
@@ -155,7 +155,7 @@ int main(int argc, char *argv[ ])
       {
         printf("What is the name of the old file? ");
         fgets(oldFile, 128, stdin);
-        prinf("\n What is the name of the new file? ");
+        printf("\n What is the name of the new file? ");
         fgets(newFile, 128, stdin);
         link(oldFile, newFile);
       }
@@ -165,7 +165,7 @@ int main(int argc, char *argv[ ])
       {
         printf("What is the name of the old file? ");
         fgets(oldFile, 128, stdin);
-        prinf("\n What is the name of the new file? ");
+        printf("\n What is the name of the new file? ");
         fgets(newFile, 128, stdin);
         symlink(oldFile, newFile);
       }
