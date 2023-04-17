@@ -101,6 +101,7 @@ int main(int argc, char *argv[ ])
   MINODE *mip = freeList;         // remove minode[0] from freeList
   freeList = freeList->next;
   cacheList = mip;                // enter minode[0] in cacheList
+  mip->next = 0;
 
   // get root INODE
   get_block(dev, iblk, buf);
@@ -224,7 +225,7 @@ int hit_ratio()
     enqueue(&temp, p);
   }
 
-  cacheList = temp;
+  //cacheList = temp;
 
   printf("\nCache List:\n");
   printf("%s %s %s %s\n", "CacheCount", "Device", "Inode", "ShareCount");
@@ -263,26 +264,10 @@ MINODE* dequeue(MINODE* queue)
 // modifying a pointer so double star
 int enqueue(MINODE** queue, MINODE* insert)
 {
-    // If queue is empty insert as the first element
-    MINODE* temp = *queue;
-    if (*queue == NULL) {
-        *queue = insert;
-        insert->next = NULL;
-    } else {
-      //  run through the list until we find our current count is less then the next
-      while (temp->cacheCount >= temp->next->cacheCount) {
-        temp = temp->next;
-      }
-      MINODE* temp2 = temp;
-      // Insert the new element at the end
-      temp2 = temp->next;
-      temp->next = insert;
-
-      insert->next = temp2;
-
-    }
-
-    return 0;
+  while (*queue)
+    queue = &(*queue)->next;
+  *queue = insert;
+  insert->next = 0;
 }
 
 int quit()
