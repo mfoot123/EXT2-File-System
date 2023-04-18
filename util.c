@@ -42,7 +42,7 @@ MINODE *iget(int dev, int ino)
   mip = cacheList;
 
   // run through the cacheList
-  while (mip != NULL || mip->next != mip->next->next) {
+  while (mip != NULL) {
     if (mip->shareCount && (mip->dev == dev) && (mip->ino == ino)) {
       // If found: 
       //increment minode's cacheCount and shareCount
@@ -81,8 +81,10 @@ MINODE *iget(int dev, int ino)
     mip->INODE = *ip;
 
     // enter minode into cacheList;
-    mip->next = cacheList;
-    cacheList = mip;
+//    mip->next = cacheList;
+//    cacheList = mip;
+
+    enqueue(&cacheList, mip);
 
     // Return minode pointer
     return mip;
