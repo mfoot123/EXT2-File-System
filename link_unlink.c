@@ -157,6 +157,53 @@ void unlink(char *pathname)
     iput(pip);
 }
 
+void truncate(MINODE *mip) {
+  // deallocates all the data blocks of the given inode
+
+  int i, j, k;
+  char buf[BLKSIZE];
+  int *temp;
+
+  // deallocate direct blocks
+  for (i = 0; i < 12; i++) {
+    if (mip->INODE.i_block[i]) {
+      bdalloc(mip->dev, mip->INODE.i_block[i]);
+      mip->INODE.i_block[i] = 0;
+    }
+  }
+
+  // deallocate indirect block
+  if (mip->INODE.i_block[12]) {
+    get_block(mip->dev, mip->INODE.i_block[12], buf);
+    temp = (int*)buf;
+    for (i = 0; i < 256 && *temp; i++) {
+      bdalloc(mip->dev, *temp);
+      temp++;
+    }
+    bdalloc(mip->dev, mip->INODE.i_block[12]);
+    mip->INODE.i_block[12] = 0;
+  }
+
+  // deallocate double indirect block
+  if (mip->INODE.i_block[13]) {
+    get_block(mip->dev, mip->INODE.i_block[13], buf);
+    temp = (int*)buf;
+    for (i = 0; i < 256 && *temp; i++) {
+      get_block(mip->dev, *temp, buf);
+      for (j = 0; j < 256 && *temp; j++) {
+        bdalloc(mip->dev, *temp);
+        temp++;
+      }
+    }
+    bdalloc(mip->dev, mip->INODE.i_block[13]);
+    mip->INODE.i_block[13] = 0;
+  }
+
+  mip->INODE.i_size = 0;
+  mip->INODE.i_blocks = 0;
+  mip->modified = 1;
+  iput(mip);
+}
 
 
 // 3. ======================== HOW TO symlink ================================
