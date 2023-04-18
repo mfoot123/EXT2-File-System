@@ -2,11 +2,8 @@
 
 /*
 1. link oldFileName newFileName (link pathname parameter)
-
    creates a file newFileName which has the SAME inode (number) as that of
    oldFileName.
-
-
    Example: link     /a/b/c                      /x/y/z ==>
                      /a/b/   data block          /x/y    data block
                  ------------------------        -------------------------
@@ -14,10 +11,7 @@
                 ------|-----------------        ------|------------------
                       |                               |
                     INODE <----------------------------
-
                 i_links_count = 1  <== INCrement i_links_count to 2
-
-
 */
 
 int link(char* oldFile, char* newFile) 
@@ -30,7 +24,7 @@ int link(char* oldFile, char* newFile)
     INODE *ip;
 
     // (1). get the INODE of /a/b/c (oldFile) into memory
-    oino = getino(dev, oldFile);
+    oino = path2inode(oldFile);
     if (oino == 0) {
         printf("%s does not exist\n", oldFile);
         return -1;
@@ -51,7 +45,7 @@ int link(char* oldFile, char* newFile)
     strcpy(nchild, basename(newFile));
 
     // check /x/y  exists and is a DIR but 'z' does not yet exist in /x/y/
-    pino = getino(dev, nparent);
+    pino = path2inode(nparent);
     if (pino == 0) {
         printf("%s does not exist\n", nparent);
         iput(omip);
@@ -97,7 +91,9 @@ void unlink(char *pathname)
     char parent[256], child[256], temp[256];
 
     // get the ino of the file to be unlinked
-    ino = getino(dev, pathname);
+    ino = path2inode(pathname);
+//    mip = iget()
+    //int inode = mip->ino;
 
     // check if file exists
     if (ino == 0) {
@@ -122,7 +118,7 @@ void unlink(char *pathname)
     strcpy(child, basename(temp));
 
     // get the minode of the parent directory
-    pino = getino(dev, parent);
+    pino = path2inode(parent);
     pip = iget(dev, pino);
 
     // remove the file from the parent directory
@@ -180,7 +176,7 @@ int symlink(char *oldName, char *newName)
   dev = root->dev;
 
   // (1). verify oldNAME exists
-  if ((ino = getino(dev, oldname_copy)) == 0) {
+  if ((ino = path2inode(oldname_copy)) == 0) {
     printf("%s does not exist\n", oldname_copy);
     return -1;
   }
@@ -201,7 +197,7 @@ int symlink(char *oldName, char *newName)
   }
 
   // get the inode of the new file
-  ino = getino(dev, newName);
+  ino = path2inode(newName);
   mip = iget(dev, ino);
 
   // (3). change /x/y/z's type to LNK (0120000)=(b1010.....)=0xA...
