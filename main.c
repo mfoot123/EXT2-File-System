@@ -45,8 +45,8 @@ int init()
     mip->dev = mip->ino = 0;
     mip->id = i;
     mip->next = &minode[i+1];
-    printf("\n\n\n\n\n%d", minode[i].ino);
-    printf("\n");
+    //printf("\n\n\n\n\n%d", minode[i].ino);
+    //printf("\n");
   }
   minode[NMINODE-1].next = 0;
   freeList = &minode[0];       // free minodes list
