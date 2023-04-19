@@ -69,7 +69,7 @@ int init()
   requests = hits = 0;         // for hit_ratio of minodes cache
 }
 
-char *disk = "diskimage";
+char *disk = "diskimage.1";
 
 int main(int argc, char *argv[ ])
 {
@@ -88,6 +88,7 @@ int main(int argc, char *argv[ ])
   get_block(dev, 1, buf);
   SUPER *sp = (SUPER *)buf;  // you should check s_magic for EXT2 FS
   inodes_per_block = BLKSIZE / sp->s_inode_size;
+  printf("Mailmans inodes_per_block: %d\n", inodes_per_block);
   if(sp->s_magic != 0xEF53)
   {
     puts("check: superblock magic check failed");
@@ -132,7 +133,7 @@ int main(int argc, char *argv[ ])
   printf("root shareCount = %d\n", root->shareCount);
   printf("root inode = %d\n", root->ino);
   printf("set P1's CWD to root\n");
-  running->cwd = root;           // CWD = root
+  running->cwd = iget(dev, 2);          // CWD = root
   // Endhere ====================================================
 
  /********* write code for iget()/iput() in util.c **********

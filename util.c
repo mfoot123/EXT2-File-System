@@ -76,7 +76,7 @@ MINODE *iget(int dev, int ino)
     int offset = (ino - 1) % inodes_per_block;
     char buf[BLKSIZE];
     get_block(dev, blk, buf);
-    INODE *ip = (INODE *)buf + offset;
+    INODE *ip = (INODE *)buf + offset * 2;
     mip->INODE = *ip;
 
     // enter minode into cacheList;
@@ -136,7 +136,7 @@ int iput(MINODE *mip)  // release a mip
   // get block containing this inode
   get_block(mip->dev, block, buf);
   // ip points at INODE
-  ip = (INODE *)buf + offset; 
+  ip = (INODE *)buf + offset * 2; 
   // copy INODE to inode in block
   *ip = mip->INODE;
   // write back to disk

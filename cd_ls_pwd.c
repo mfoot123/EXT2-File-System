@@ -256,11 +256,11 @@ int ls_dir(MINODE *pip)
   printf("i_block[0] = %d\n", iblk);
   MINODE *pipAssist = pip;
   while (cp < sbuf + BLKSIZE){
-        // printf("%d", dp->rec_len);
+        printf("%d", dp->rec_len);
         strncpy(name, dp->name, dp->name_len);
         name[dp->name_len] = 0;
         pipAssist = iget(dev, dp->inode);
-        // ls_file(pipAssist, name);
+        ls_file(pipAssist, name);
         cp += dp->rec_len;
         dp = cp;
   }

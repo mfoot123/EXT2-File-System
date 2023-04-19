@@ -84,21 +84,23 @@ int mymkdir(MINODE *pip, char *name)
   int ino;
   char buf[BLKSIZE], temp[256];
   DIR* dp;
+  char *parent_path;
 
   // 1. pip points at the parent minode[] of "/a/b", name is a string "c"
 
-  char *path = "/a/b";
-  char *parent_path = dirname(path); // parent_path is now "/a"
+  //char *path = "/a/b";
+  //char *parent_path = dirname(path); // parent_path is now "/a"
 
   // Find the inode of the parent directory "/a"
-  MINODE *parent_mip = path2inode(parent_path);
+  /*MINODE *parent_mip = path2inode(parent_path);
   if (parent_mip == NULL) {
       printf("Error: directory %s does not exist\n", parent_path);
       return -1;
   }
+  */
 
   // Get the MINODE structure for the parent inode
-  pip = iget(root->dev, parent_mip->ino);
+  //pip = iget(root->dev, parent_mip->ino);
 
   //  2. allocate an inode and a disk block for the new directory;
   ino = ialloc(dev);   // Allocate a new inode on the device
@@ -139,7 +141,7 @@ int mymkdir(MINODE *pip, char *name)
   dp->name_len = 1;
   dp->name[0] = '.';
   dp->rec_len = 12;
-  dp = (void *)dp + dp->rec_len;
+  dp = (char *)dp + dp->rec_len;
 
   // Create the ".." directory entry and write it to the buffer
   dp->inode = pip->ino;
@@ -173,6 +175,7 @@ int enter_child(MINODE *pip, int myino, char *myname)
     // assume: only 12 direct blocks
     for (i = 0; i < 12; i++) {
         // if (i_block[i]==0) BREAK;
+        // no dir block here
         if (pip->INODE.i_block[i] == 0) // if no more data blocks, break
             break;
         
@@ -205,7 +208,7 @@ int enter_child(MINODE *pip, int myino, char *myname)
                 dp->inode = myino;
                 dp->rec_len = remain;
                 dp->name_len = strlen(myname);
-                strcpy(dp->name, myname);
+                strncpy(dp->name, myname, dp->name_len);
                 
                 // Write parent's data block back to disk
                 put_block(pip->dev, pip->INODE.i_block[i], buf);
@@ -226,7 +229,8 @@ int enter_child(MINODE *pip, int myino, char *myname)
 
 int make_dir(char *pathname)
 {
-    char *parent_pathname, *child_name, *temp_pathname;
+    char *parent_pathname, *child_name;
+    char temp_pathname[128];
     MINODE *pip;
     int parent, child;
     
@@ -234,7 +238,7 @@ int make_dir(char *pathname)
 
     // WARNING: strtok(), dirname(), basename() destroy pathname
     // so duplicate the pathname before 
-    temp_pathname = strdup(pathname);
+    strcpy(temp_pathname, pathname);
     // parent = dirname(pathname);   parent= "/a/b" OR "a/b"
     parent_pathname = dirname(temp_pathname);
     // child  = basename(pathname);  child = "c"
