@@ -30,7 +30,6 @@ INODE *ip;
 #define NFD                  8
 #define NOFT                32
 
-#define inodes_per_block    8
 
 // In-memory inodes structure
 typedef struct minode{

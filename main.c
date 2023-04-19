@@ -18,6 +18,7 @@ int  n;            // number of token strings
 
 int ninodes, nblocks;
 int bmap, imap, inodes_start, iblk;  // bitmap, inodes block numbers
+int inodes_per_block;
 
 int  fd, dev;
 char cmd[16], pathname[128], parameter[128];
@@ -78,11 +79,21 @@ int main(int argc, char *argv[ ])
 
   fd = dev = open(disk, O_RDWR);
   printf("dev = %d\n", dev);  // YOU should check dev value: exit if < 0
-
+  if(dev < 0) {
+    puts("Unable to open disk");
+    exit(1);
+  }
   // get super block of dev
   get_block(dev, 1, buf);
   SUPER *sp = (SUPER *)buf;  // you should check s_magic for EXT2 FS
-  printf("check: superblock magic = 0x%8x OK\n", sp);
+  inodes_per_block = BLKSIZE / sp->s_inode_size;
+  if(sp->s_magic != 0xEF53)
+  {
+    puts("check: superblock magic check failed");
+    exit(1);
+  } else {
+    puts("check: s_magic check ok");
+  }
 
   ninodes = sp->s_inodes_count;
   nblocks = sp->s_blocks_count;
@@ -104,18 +115,20 @@ int main(int argc, char *argv[ ])
   mip->next = 0;
 
   // get root INODE
-  get_block(dev, iblk, buf);
-  INODE *ip = (INODE *)buf + 1;   // #2 INODE
+  //get_block(dev, 2, buf);
+  //mip = iget(dev, 2);
+  INODE* ip = (INODE*)buf + 1;
   mip->INODE = *ip;               // copy into mip->INODE
 
   mip->cacheCount = 1;
   mip->shareCount = 2;            // for root AND CWD
   mip->modified   = 0;
-
+  
   root = mip;           // root points at #2 INODE in minode[0]
 
   printf("Creating P1 as running process\n");
   printf("root shareCount = %d\n", root->shareCount);
+  printf("root inode = %d\n", root->ino);
   printf("set P1's CWD to root\n");
   running->cwd = root;           // CWD = root
   // Endhere ====================================================
