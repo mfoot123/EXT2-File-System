@@ -45,6 +45,8 @@ int init()
     mip->dev = mip->ino = 0;
     mip->id = i;
     mip->next = &minode[i+1];
+    printf("\n\n\n\n\n%d", minode[i].ino);
+    printf("\n");
   }
   minode[NMINODE-1].next = 0;
   freeList = &minode[0];       // free minodes list
@@ -110,21 +112,22 @@ int main(int argc, char *argv[ ])
   // HERE =========================================================
   MINODE *mip = freeList;         // remove minode[0] from freeList
   freeList = freeList->next;
-  cacheList = mip;                // enter minode[0] in cacheList
+  get_block(dev, 2, buf);
+
+  mip = iget(dev, 2);
+  // cacheList = mip;                // enter minode[0] in cacheList
   mip->next = 0;
 
   // get root INODE
-  //get_block(dev, 2, buf);
-  //mip = iget(dev, 2);
-  INODE* ip = (INODE*)buf + 1;
-  mip->INODE = *ip;               // copy into mip->INODE
+
+  // INODE* ip = (INODE*)buf + 1;
+  // mip->INODE = *ip;               // copy into mip->INODE
 
   mip->cacheCount = 1;
   mip->shareCount = 2;            // for root AND CWD
   mip->modified   = 0;
   
   root = mip;           // root points at #2 INODE in minode[0]
-
   printf("Creating P1 as running process\n");
   printf("root shareCount = %d\n", root->shareCount);
   printf("root inode = %d\n", root->ino);
