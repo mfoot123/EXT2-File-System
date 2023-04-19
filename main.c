@@ -18,7 +18,6 @@ int  n;            // number of token strings
 
 int ninodes, nblocks;
 int bmap, imap, inodes_start, iblk;  // bitmap, inodes block numbers
-int inodes_per_block;
 
 int  fd, dev;
 char cmd[16], pathname[128], parameter[128];
