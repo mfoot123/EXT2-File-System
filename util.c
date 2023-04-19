@@ -3,10 +3,9 @@
 /**************** util.c file **************/
 
 int get_block(int dev, int blk, char buf[ ])
-{
+{   
   lseek(dev, blk*BLKSIZE, SEEK_SET);
-  int n = read(fd, buf, BLKSIZE);
-  return n;
+  return read(dev, buf, BLKSIZE);
 }
 
 int put_block(int dev, int blk, char buf[ ])
