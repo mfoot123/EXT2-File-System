@@ -38,7 +38,7 @@ int cd(char *pathname)
     int dev = running->cwd->dev;
 
     // (1). Call path_to_inode to get the inode number and device
-    ino = path2inode(pathname);
+    mip = path2inode(pathname);
 
     // return error if ino=0
     if (ino == 0) {
@@ -48,10 +48,11 @@ int cd(char *pathname)
 
     // (2). MINODE *mip = iget(dev, ino);
     // Get the inode of the directory
-    mip = iget(dev, ino);
+    //mip = iget(dev, ino);
 
     // (3). Verify mip->INODE is a DIR // return error if not DIR
     // Verify that the inode is a directory
+    printf("running:%d  mip:%d  ino:%d\n", S_ISDIR(running->cwd->INODE.i_mode), S_ISDIR(mip->INODE.i_mode), mip->ino);
     if (!S_ISDIR(mip->INODE.i_mode)) {
         printf("%s: Not a directory\n", pathname);
         // release the mip
