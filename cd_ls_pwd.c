@@ -181,45 +181,32 @@ int ls(char *pathname)
 
 int ls_file(MINODE *mip, char *name)
 {
+    char *t1 = "xwrxwrxwr-------";
+    char *t2 = "----------------";
+
     char ftime[64];
     struct stat fstat, *sp;
     sp = &fstat;
     // use mip->INODE to ls_file
 
     // Check if the inode is a regular file
-    if (!S_ISREG(mip->INODE.i_mode))
+    if (S_ISREG(mip->INODE.i_mode))
         putchar('-');
     // Check if the inode is a directory
-    else if (!S_ISDIR(mip->INODE.i_mode))
+    else if (S_ISDIR(mip->INODE.i_mode))
         putchar('d');
     // Check if the inode is a link
-    else if (!S_ISLNK(mip->INODE.i_mode)){
+    else if (S_ISLNK(mip->INODE.i_mode))
         putchar('l');
+    for (int i = 8; i >= 0; i--){
+        if (mip->INODE.i_mode & (1<<i)){
+            printf("%c", t1[i]);
+        }
+        else{
+            printf("%c", t2[i]);
+        }
     }
-
-    if(mip->INODE.i_mode & 0x0001)
-    {
-        putchar('x');
-    }
-    else{
-        putchar('-');
-    }
-
-    if(mip->INODE.i_mode & 0x0002){
-        putchar('w');
-    }
-    else{
-        putchar('-');
-    }
-
-    if(mip->INODE.i_mode & 0x0004){
-        putchar('r');
-    }
-    else{
-        putchar('-');
-    }
-
-    // Print the file attributes
+        // Print the file attributes
     printf("%4d", mip->INODE.i_links_count);
     printf("%4d", mip->INODE.i_uid);
     printf("%4d", mip->INODE.i_gid);
@@ -258,7 +245,6 @@ int ls_dir(MINODE *pip)
   printf("i_block[0] = %d\n", iblk);
   MINODE *pipAssist = pip;
   while (cp < sbuf + BLKSIZE){
-        printf("%d", dp->rec_len);
         strncpy(name, dp->name, dp->name_len);
         name[dp->name_len] = 0;
         pipAssist = iget(dev, dp->inode);
