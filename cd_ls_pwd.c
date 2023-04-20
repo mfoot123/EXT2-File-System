@@ -222,8 +222,9 @@ int ls_file(MINODE *mip, char *name)
     printf("%4d", mip->INODE.i_links_count);
     printf("%4d", mip->INODE.i_uid);
     printf("%4d", mip->INODE.i_gid);
+    long time_copy = mip->INODE.i_mtime;
+    strcpy(ftime, ctime((time_t*)&(time_copy)));
 
-    strcpy(ftime, ctime((time_t*)&(mip->INODE.i_mtime)));
     ftime[strlen(ftime) - 1] = 0;
     printf("%s  ", ftime);
 

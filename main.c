@@ -69,7 +69,7 @@ int init()
   requests = hits = 0;         // for hit_ratio of minodes cache
 }
 
-char *disk = "diskimage.1";
+char *disk = "diskimage";
 
 int main(int argc, char *argv[ ])
 {
@@ -145,7 +145,8 @@ int main(int argc, char *argv[ ])
   while(1){
      printf("P%d running: ", running->pid);
      pathname[0] = parameter[0] = 0;
-
+     bzero(pathname, 0);
+     bzero(parameter, 0);
      printf("input command [cd|ls|pwd|mkdir|creat|rmdir|link|unlink|symlink |show|hits|exit] :");
      fgets(line, 128, stdin);
      line[strlen(line)-1] = 0;    // kill \n at end

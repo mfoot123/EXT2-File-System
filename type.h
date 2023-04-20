@@ -118,7 +118,7 @@ int clr_bit(char *buf, int bit);
 int incFreeInodes(int dev);
 int idalloc(int dev, int ino);
 int bdalloc(int dev, int blk);
-int rmdir(const char *pathname);
+//int rmdir(const char *pathname);
 int rm_child(MINODE *parent, char *name);
 
 // mkdir_creat

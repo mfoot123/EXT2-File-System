@@ -71,7 +71,7 @@ int bdalloc(int dev, int blk) // deallocate a blk number
 
 /******************************************************REMOVE DIR**********************************************************/
 
-int rmdir(const char *pathname) {
+int rmdir(char *pathname) {
 
   char parent_dir[256], child_name[256];
   MINODE *pip; 
