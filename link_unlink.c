@@ -24,12 +24,13 @@ int link(char* oldFile, char* newFile)
     INODE *ip;
 
     // (1). get the INODE of /a/b/c (oldFile) into memory
-    oino = path2inode(oldFile);
+    omip = path2inode(oldFile);
+    oino = omip->ino;
     if (oino == 0) {
         printf("%s does not exist\n", oldFile);
         return -1;
     }
-    omip = iget(dev, oino);
+    //omip = iget(dev, oino);
 
     // (2). check /a/b/c (oldFile) is NOT a DIRectory (link to DIR is NOT allowed)
     if (S_ISDIR(omip->INODE.i_mode)) {
@@ -43,15 +44,18 @@ int link(char* oldFile, char* newFile)
     strcpy(ochild, basename(oldFile));
     strcpy(nparent, dirname(newFile));
     strcpy(nchild, basename(newFile));
+    printf("%s", nparent);
 
     // check /x/y  exists and is a DIR but 'z' does not yet exist in /x/y/
-    pino = path2inode(nparent);
+    pmip = path2inode(nparent);
+    pino = pmip->ino;
     if (pino == 0) {
         printf("%s does not exist\n", nparent);
         iput(omip);
         return -1;
     }
-    pmip = iget(dev, pino);
+    //pmip = iget(dev, pino);
+    printf("pino:%d pmip:%d", pino, pmip->ino);
     if (!S_ISDIR(pmip->INODE.i_mode)) {
         printf("%s is not a directory, cannot link\n", nparent);
         iput(omip);
