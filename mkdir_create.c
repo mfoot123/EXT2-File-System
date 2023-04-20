@@ -285,7 +285,7 @@ int my_creat(MINODE *pip, char *name)
   DIR* dp;
 
   // 1. pip points at the parent minode[] of "/a/b", name is a string "c"
-
+  /*
   char *path = "/a/b";
   char *parent_path = dirname(path); // parent_path is now "/a"
 
@@ -295,10 +295,12 @@ int my_creat(MINODE *pip, char *name)
       printf("Error: directory %s does not exist\n", parent_path);
       return -1;
   }
-
+  */
+  /*
   // Get the MINODE structure for the parent inode
-  pip = iget(root->dev, parent_mip->ino);
-
+  pip = iget(root->dev, pip->ino);
+  */
+ 
   //  2. allocate an inode for the new file
   ino = ialloc(dev);   // Allocate a new inode on the device
 

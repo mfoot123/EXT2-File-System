@@ -200,8 +200,8 @@ MINODE *path2inode(char *pathname)
   else if (strcmp(pathname, "..") == 0)
   {
     // get parent inode
-    int parent_ino = findino(running->cwd, &ino);
-    return iget(dev, parent_ino);
+    findino(running->cwd, &ino);
+    return iget(dev, ino);
   }
   else if (pathname[0] == '/')
   {

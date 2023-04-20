@@ -165,7 +165,7 @@ int main(int argc, char *argv[ ])
         pwd(running->cwd);
      else if (strcmp(cmd, "mkdir")==0)
         make_dir(pathname);
-     else if (strcmp(cmd, "create")==0)
+     else if (strcmp(cmd, "creat")==0)
         creat_file(pathname);
      else if (strcmp(cmd, "rmdir")==0)
         rmdir(pathname);
