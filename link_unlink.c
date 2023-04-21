@@ -217,85 +217,99 @@ void truncate(MINODE *mip) {
 
 //    ASSUME: oldNAME has <= 60 chars, inlcuding the ending NULL byte.
 
-int symlink(char *oldName, char *newName) 
-{
-  int ino, pino;
-  MINODE *mip, *pmip;
-  char oldname_copy[60], path_copy[64];
-  strcpy(path_copy, newName);
-  strcpy(oldname_copy, oldName);
-  
-  // Get the device of the root inode
-  dev = root->dev;
+// SOURCE: https://github.com/Eastonco/CS360/blob/master/lab6/src/cmd/symlink.c
+// NOTE: Code was not directly copy and pasted
+//       It had to be modified to accomodate new requirements
 
-  // (1). verify oldNAME exists
-  if ((ino = path2inode(oldname_copy)) == 0) {
-    printf("%s does not exist\n", oldname_copy);
-    return -1;
-  }
-  mip = iget(dev, ino);
+int symlink(char *oldNAME, char *newNAME) {
+    MINODE *mip;
 
-  // and is not a directory
-  if (S_ISDIR(mip->INODE.i_mode)) {
-    printf("%s is a directory\n", oldname_copy);
+    // set dev correctly for getting old inode
+    if (oldNAME[0] == '/')
+    {
+        dev = root->dev;
+    }
+    else
+    {
+        dev = running->cwd->dev;
+    }
+
+    // (1). verify oldNAME exists (either a DIR or a REG file)
+    mip = path2inode(oldNAME);
+    int old_ino = mip->ino;
+    if (old_ino == 0) {
+        printf("%s does not exist\n", oldNAME);
+        return -1;
+    }
+    if (!S_ISDIR(mip->INODE.i_mode) && !S_ISREG(mip->INODE.i_mode)) {
+        printf("%s is neither a directory nor a regular file\n", oldNAME);
+        iput(mip);
+        return -1;
+    }
+
+    // set dev correctly for getting new inode
+    if (newNAME[0] == '/')
+    {
+        dev = root->dev;
+    }
+    else
+    {
+        dev = running->cwd->dev;
+    }
+
+    // (2). creat a FILE /x/y/z
+    creat_file(newNAME);
+
+    // (3). change /x/y/z's type to LNK (0120000)=(b1010.....)=0xA...
+    mip = path2inode(newNAME);
+    int new_ino = mip->ino;
+    if (new_ino == 0) {
+        printf("%s does not exist\n", newNAME);
+        return -1;
+    }
+    //mip = iget(dev, new_ino);
+    mip->INODE.i_mode = 0xA1FF; // A1FF sets link perm bits correctly (rwx for all users)
+    mip->modified = 1;
+
+    // (4). write the string oldNAME into the i_block[ ], which has room for 60 chars.
+    // i_block[] + 24 after = 84 total for old
+    strncpy(mip->INODE.i_block, oldNAME, 84);
+
+    // set /x/y/z file size = number of chars in oldName
+    mip->INODE.i_size = strlen(oldNAME) + 1; // +1 for '\0'
+
+    // (5). write the INODE of /x/y/z back to disk.
     iput(mip);
-    return -1;
-  }
-  iput(mip);
-
-  // (2). creat a FILE /x/y/z
-  if (my_creat(newName, 0) < 0) {
-    printf("Failed to create %s\n", newName);
-    return -1;
-  }
-
-  // get the inode of the new file
-  ino = path2inode(newName);
-  mip = iget(dev, ino);
-
-  // (3). change /x/y/z's type to LNK (0120000)=(b1010.....)=0xA...
-  mip->INODE.i_mode = 0xA000;
-
-  // (4). write the string oldNAME into the i_block[ ], which has room for 60 chars.
-  strncpy(mip->INODE.i_block, oldname_copy, 60);
-
-  // set /x/y/z file size = number of chars in oldName
-  mip->INODE.i_size = strlen(oldname_copy);
-
-  // (5). Write the INODE of /x/y/z back to disk.
-  mip->modified = 1;
-  iput(mip);
-  
-  return 0;
 }
 
 
+
+
 // 4. readlink pathname: return the contents of a symLink file
-int readlink(char *pathname, char *link) {
-
+char* readlink(char *pathname)
+{
+  MINODE *mip;
+  char *link_str;
+  
   // (1). get INODE of pathname into a minode[ ].
-  int ino = path2inode(pathname);
-  if (ino == 0) {
-    // Path does not exist
-    return -1;
+  mip = path2inode(pathname);
+  if (!mip) {
+    printf("Failed to get inode of %s\n", pathname);
+    return NULL;
   }
-  MINODE *mip = iget(dev, ino);
-
+  
   // (2). check INODE is a symbolic Link file.
   if (!S_ISLNK(mip->INODE.i_mode)) {
-    printf("Not a symbolic link file");
+    printf("%s is not a symbolic link file\n", pathname);
     iput(mip);
-    return -1;
+    return NULL;
   }
-
+  
   // (3). return its string contents in INODE.i_block[ ].
-  int n = mip->INODE.i_size;
-  char buf[n+1];
-  buf[n] = '\0';   // Add null terminator
-  get_block(mip->dev, mip->INODE.i_block[0], buf);  // Read symbolic link file's block
-  strcpy(link, buf);
-
-  // Release the minode and return success
+  link_str = (char*)malloc(mip->INODE.i_size+1); // add space for NULL byte
+  strncpy(link_str, mip->INODE.i_block, mip->INODE.i_size);
+  link_str[mip->INODE.i_size] = '\0'; // add NULL byte
   iput(mip);
-  return 0;
+  
+  return link_str;
 }
