@@ -173,7 +173,11 @@ void truncate(MINODE *mip) {
   // deallocate direct blocks
   for (i = 0; i < 12; i++) {
     if (mip->INODE.i_block[i]) {
-      bdalloc(mip->dev, mip->INODE.i_block[i]);
+      printf("in direct block\n");
+      if(!S_ISLNK(mip->INODE.i_mode))
+      {
+        bdalloc(mip->dev, mip->INODE.i_block[i]);
+      }
       mip->INODE.i_block[i] = 0;
     }
   }
@@ -268,7 +272,8 @@ int symlink(char *oldNAME, char *newNAME) {
         return -1;
     }
     //mip = iget(dev, new_ino);
-    mip->INODE.i_mode = 0xA1FF; // A1FF sets link perm bits correctly (rwx for all users)
+    mip->INODE.i_mode &= 0x0FFF; // 0x0FFF clears first four bits of imode
+    mip->INODE.i_mode |= 0xA000;
     mip->modified = 1;
 
     // (4). write the string oldNAME into the i_block[ ], which has room for 60 chars.
@@ -276,7 +281,7 @@ int symlink(char *oldNAME, char *newNAME) {
     strncpy(mip->INODE.i_block, oldNAME, 84);
 
     // set /x/y/z file size = number of chars in oldName
-    mip->INODE.i_size = strlen(oldNAME) + 1; // +1 for '\0'
+    mip->INODE.i_size = strlen(oldNAME);
 
     // (5). write the INODE of /x/y/z back to disk.
     iput(mip);

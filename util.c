@@ -47,6 +47,7 @@ MINODE *iget(int dev, int ino)
       //increment minode's cacheCount and shareCount
       mip->cacheCount++;
       mip->shareCount++;
+
       // update our hits
       hits++;
       // return minode pointer

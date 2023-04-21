@@ -5,7 +5,7 @@
 // src: textbook
 int clr_bit(char *buf, int bit) // clear bit in char buf[BLKSIZE]
 { 
-    int bit, byte;
+    int byte;
     byte = bit / 8;
     bit = bit % 8;
     if (buf[byte] &= ~(1 << bit))
@@ -90,11 +90,19 @@ int rmdir(char *pathname) {
   // 1. get minode of pathname: 
   MINODE *mip = path2inode(pathname);
 
+  printf("mip ino: %d", mip->ino);
+
   // 2. check DIR type, not BUSY, is empty
-  if (!S_ISDIR(mip->INODE.i_mode) || mip->shareCount > 1) {
-      printf("Error: Directory is not empty or busy\n");
+  if (!S_ISDIR(mip->INODE.i_mode)) {
+      printf("Error: not a dir\n");
       iput(mip);
       return -1;
+  }
+  if(mip->shareCount > 1)
+  {
+    printf("Error: Directory is busy\n");
+    iput(mip);
+    return -1;
   }
 
   // Check whether directory is empty
@@ -143,6 +151,8 @@ int rmdir(char *pathname) {
   pip = path2inode(parent_dir);
   pino = pip->ino;
 
+  printf("We got here");
+
   //pip = iget(dev, pino);
 
   // 5. Remove child's entry from parent directory
@@ -166,6 +176,8 @@ int rm_child(MINODE *parent, char *name) {
     INODE *pip = &parent->INODE;
     int found_entry = 0;
 
+    printf("parent ino: %d\n", parent->ino);
+
     // 1. Search parent INODE's data block(s) for the entry of name
     for (i = 0; i < 12 && pip->i_block[i]; i++) {
         get_block(parent->dev, pip->i_block[i], buf);
@@ -173,6 +185,7 @@ int rm_child(MINODE *parent, char *name) {
         dp = (DIR *)buf;
         prev_dp = NULL;
         while (cp < buf + BLKSIZE) {
+            printf("dpname: %s\n", dp->name);
             if (strncmp(dp->name, name, dp->name_len) == 0) {
                 // Entry with matching name found, set the flag to true
                 found_entry = 1;

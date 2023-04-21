@@ -220,6 +220,11 @@ int ls_file(MINODE *mip, char *name)
 
     printf("%s  ", name);
 
+    if(S_ISLNK(mip->INODE.i_mode))
+    {
+        printf("-> %s", (char*)mip->INODE.i_block);
+    }
+
     printf("[%d %d]\n", mip->dev, mip->ino);
 
     return 0;
@@ -249,6 +254,7 @@ int ls_dir(MINODE *pip)
         name[dp->name_len] = 0;
         pipAssist = iget(dev, dp->inode);
         ls_file(pipAssist, name);
+        iput(pipAssist);
         cp += dp->rec_len;
         dp = cp;
   }

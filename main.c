@@ -21,7 +21,7 @@ int bmap, imap, inodes_start, iblk;  // bitmap, inodes block numbers
 
 int  fd, dev;
 char cmd[16], pathname[128], parameter[128];
-int  requests, hits;
+int  requests, hits, ifactor;
 
 MINODE* dequeue(MINODE* queue);
 int enqueue(MINODE** queue, MINODE* insert);
@@ -88,19 +88,19 @@ int main(int argc, char *argv[ ])
   get_block(dev, 1, buf);
   SUPER *sp = (SUPER *)buf;  // you should check s_magic for EXT2 FS
   inodes_per_block = BLKSIZE / sp->s_inode_size;
-  printf("Mailmans inodes_per_block: %d\n", inodes_per_block);
   if(sp->s_magic != 0xEF53)
   {
     puts("check: superblock magic check failed");
     exit(1);
   } else {
     puts("check: s_magic check ok");
+    ifactor = 2;
   }
 
   ninodes = sp->s_inodes_count;
   nblocks = sp->s_blocks_count;
-  printf("ninodes=%d  nblocks=%d\n", ninodes, nblocks);
-
+  printf("ninodes=%d  nblocks=%d  inode_size=%d\n", ninodes, nblocks, sp->s_inode_size);
+  printf("inodes_per_block=%d  ifactor=%d\n", inodes_per_block, ifactor);
   get_block(dev, 2, buf);
   GD *gp = (GD *)buf;
 
@@ -109,6 +109,7 @@ int main(int argc, char *argv[ ])
   iblk = inodes_start = gp->bg_inode_table;
 
   printf("bmap=%d  imap=%d  iblk=%d\n", bmap, imap, iblk);
+  printf("mount root\n");
 
   // HERE =========================================================
   MINODE *mip = freeList;         // remove minode[0] from freeList
@@ -168,7 +169,10 @@ int main(int argc, char *argv[ ])
      else if (strcmp(cmd, "creat")==0)
         creat_file(pathname);
      else if (strcmp(cmd, "rmdir")==0)
+     {
+        printf("here\n");
         rmdir(pathname);
+     }
       else if (strcmp(cmd, "link")==0)
       {
         link(pathname, parameter);
@@ -179,14 +183,22 @@ int main(int argc, char *argv[ ])
       {
         symlink(pathname, parameter);
       }
-        
-
-     if (strcmp(cmd, "show")==0)
-        show_dir(running->cwd);
-     if (strcmp(cmd, "hits")==0)
-        hit_ratio();
-     if (strcmp(cmd, "exit")==0)
-        quit();
+     else if (strcmp(cmd, "show")==0)
+     {
+      show_dir(running->cwd);
+     }
+     else if (strcmp(cmd, "hits")==0)
+     {
+      hit_ratio();
+     }
+     else if (strcmp(cmd, "exit")==0)
+     {
+      quit();
+     }
+     else
+     {
+        printf("Command not found");
+    }
   }
 }
 
@@ -226,33 +238,34 @@ int show_dir(MINODE *mip)
 
 int hit_ratio()
 {
-  MINODE* temp = 0;
+  MINODE *temp = 0;
   MINODE* p;
+ 
   // while there is something in the queue
-  while(p = dequeue(cacheList))
+  int i = cacheList->cacheCount;
+  while (i != 0)
   {
+    p = dequeue(cacheList);
     enqueue(&temp, p);
+    i--;
   }
+  cacheList = temp;
 
-  //cacheList = temp;
-
-  printf("\nCache List:\n");
-  printf("%s %s %s %s\n", "CacheCount", "Device", "Inode", "ShareCount");
+  printf("\nCacheList: CacheCounts[Device Inode]ShareCounts->Next\n");
 
   // loop through the linked list
   MINODE* mip = cacheList;
-  while (mip != NULL)
+  printf("CacheList: ");
+  while (mip)
   {
     // only print used minodes aka ones that have been shared
-    if (mip->shareCount > 0)
-    {
-      printf("%d %d %d %d\n", mip->cacheCount, mip->dev, mip->ino, mip->shareCount);
-    }
+    printf("c%d[%d %d]s%d->", mip->cacheCount, mip->dev, mip->ino, mip->shareCount);
+
     mip = mip->next;
   }
-
-  double ratio = (hits / requests) * 100;
-  printf("Hit Ratio: %f\n", ratio);
+  printf("null\n");
+  int ratio = (100*hits) / requests;
+  printf("Requests: %d  Hits: %d  HitRatio: %d%\n", requests, hits, ratio);
 }
 
 MINODE* dequeue(MINODE* queue)
