@@ -95,7 +95,8 @@ void unlink(char *pathname)
     char parent[256], child[256], temp[256];
 
     // get the ino of the file to be unlinked
-    ino = path2inode(pathname);
+    mip = path2inode(pathname);
+    ino = mip->ino;
 //    mip = iget()
     //int inode = mip->ino;
 
@@ -106,7 +107,7 @@ void unlink(char *pathname)
     }
 
     // get the minode of the file
-    mip = iget(dev, ino);
+    //mip = iget(dev, ino);
 
     // check if file is a directory
     if (S_ISDIR(mip->INODE.i_mode)) {
@@ -122,8 +123,9 @@ void unlink(char *pathname)
     strcpy(child, basename(temp));
 
     // get the minode of the parent directory
-    pino = path2inode(parent);
-    pip = iget(dev, pino);
+    pip = path2inode(parent);
+    pino = pip->ino;
+    //pip = iget(dev, pino);
 
     // remove the file from the parent directory
     rm_child(pip, child);
