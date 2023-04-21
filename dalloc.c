@@ -76,6 +76,7 @@ int rmdir(char *pathname) {
   char parent_dir[256], child_name[256];
   MINODE *pip; 
   DIR* dp;
+  int pino;
 
   // 1. get minode of pathname: 
   MINODE *mip = path2inode(pathname);
@@ -130,8 +131,10 @@ int rmdir(char *pathname) {
   strcpy(parent_dir, pathname);
   strcpy(child_name, basename(parent_dir));
   strcpy(parent_dir, dirname(parent_dir));
-  int pino = path2inode(parent_dir);
-  pip = iget(dev, pino);
+  pip = path2inode(parent_dir);
+  pino = pip->ino;
+
+  //pip = iget(dev, pino);
 
   // 5. Remove child's entry from parent directory
   rm_child(pip, child_name);
