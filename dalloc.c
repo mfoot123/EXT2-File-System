@@ -4,7 +4,16 @@
 
 // src: textbook
 int clr_bit(char *buf, int bit) // clear bit in char buf[BLKSIZE]
-{ buf[bit/8] &= ~(1 << (bit%8)); }
+{ 
+    int bit, byte;
+    byte = bit / 8;
+    bit = bit % 8;
+    if (buf[byte] &= ~(1 << bit))
+    {
+        return 1;
+    }
+    return 0;
+}
 
 // src: website
 int incFreeInodes(int dev)
