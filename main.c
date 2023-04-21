@@ -175,10 +175,9 @@ int main(int argc, char *argv[ ])
       }
       else if (strcmp(cmd, "unlink")==0)
         unlink(pathname);
-      else if (strcmp(cmd, "unlink")==0)
+      else if (strcmp(cmd, "symlink")==0)
       {
-        sscanf(line, "%s %s %s", oldFile, newFile);
-        symlink(oldFile, newFile);
+        symlink(pathname, parameter);
       }
         
 
