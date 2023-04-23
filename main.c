@@ -28,6 +28,10 @@ int enqueue(MINODE** queue, MINODE* insert);
 
 char* oldFile, newFile;
 
+/**********************************************LEVEL TWO**************************************************/
+
+OFT oft[32];
+
 // start up files
 #include "util.c"
 #include "cd_ls_pwd.c"
