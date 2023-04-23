@@ -30,6 +30,13 @@ INODE *ip;
 #define NFD                  8
 #define NOFT                32
 
+// source: https://github.com/Eastonco/CS360/blob/master/lab6/src/type.h
+// read/write/rw/append modes
+#define READ 0
+#define WRITE 1
+#define READ_WRITE 2
+#define APPEND 3
+
 int inodes_per_block;
 
 // In-memory inodes structure
