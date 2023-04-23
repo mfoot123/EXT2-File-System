@@ -148,60 +148,107 @@ int main(int argc, char *argv[ ])
  **********************************************************/
   
   while(1){
-     printf("P%d running: ", running->pid);
-     pathname[0] = parameter[0] = 0;
-     bzero(pathname, 0);
-     bzero(parameter, 0);
-     printf("input command [cd|ls|pwd|mkdir|creat|rmdir|link|unlink|symlink |show|hits|exit] :");
-     fgets(line, 128, stdin);
-     line[strlen(line)-1] = 0;    // kill \n at end
+    printf("P%d running: ", running->pid);
+    pathname[0] = parameter[0] = 0;
+    bzero(pathname, 0);
+    bzero(parameter, 0);
+    printf("Level 1: [cd|ls|pwd|mkdir|creat|rmdir|link|unlink|symlink]\n");
+    printf("Level 2: [open|close|lseek|pfd|read|write|cat|cp|head|tail]\n");
+    printf("Misc: [show|hits|exit]\n");
+    printf("input command   :");
+    fgets(line, 128, stdin);
+    line[strlen(line)-1] = 0;    // kill \n at end
 
-     if (line[0]==0)
-        continue;
+    if (line[0]==0)
+      continue;
 
-     sscanf(line, "%s %s %64c", cmd, pathname, parameter);
-     printf("pathname=%s parameter=%s\n", pathname, parameter);
+    sscanf(line, "%s %s %64c", cmd, pathname, parameter);
+    printf("pathname=%s parameter=%s\n", pathname, parameter);
 
-     if (strcmp(cmd, "ls")==0)
-        ls(pathname);
-     else if (strcmp(cmd, "cd")==0)
-        cd(pathname);
-     else if (strcmp(cmd, "pwd")==0)
-        pwd(running->cwd);
-     else if (strcmp(cmd, "mkdir")==0)
-        make_dir(pathname);
-     else if (strcmp(cmd, "creat")==0)
-        creat_file(pathname);
-     else if (strcmp(cmd, "rmdir")==0)
-     {
-        printf("here\n");
-        rmdir(pathname);
-     }
-      else if (strcmp(cmd, "link")==0)
-      {
-        link(pathname, parameter);
-      }
-      else if (strcmp(cmd, "unlink")==0)
-        unlink(pathname);
-      else if (strcmp(cmd, "symlink")==0)
-      {
-        symlink(pathname, parameter);
-      }
-     else if (strcmp(cmd, "show")==0)
-     {
+/************************************************LEVEL 1***************************************************/
+    if (strcmp(cmd, "ls")==0)
+      ls(pathname);
+    else if (strcmp(cmd, "cd")==0)
+      cd(pathname);
+    else if (strcmp(cmd, "pwd")==0)
+      pwd(running->cwd);
+    else if (strcmp(cmd, "mkdir")==0)
+      make_dir(pathname);
+    else if (strcmp(cmd, "creat")==0)
+      creat_file(pathname);
+    else if (strcmp(cmd, "rmdir")==0)
+    {
+      printf("here\n");
+      rmdir(pathname);
+    }
+    else if (strcmp(cmd, "link")==0)
+    {
+      link(pathname, parameter);
+    }
+    else if (strcmp(cmd, "unlink")==0)
+      unlink(pathname);
+    else if (strcmp(cmd, "symlink")==0)
+    {
+      symlink(pathname, parameter);
+    }
+/************************************************LEVEL 2***************************************************/
+    else if(strcmp(cmd, "open")==0)
+    {
+
+    }
+    else if(strcmp(cmd, "close")==0)
+    {
+
+    }
+    else if(strcmp(cmd, "lseek")==0)
+    {
+
+    }
+    else if(strcmp(cmd, "pfd")==0)
+    {
+
+    }
+    else if(strcmp(cmd, "read")==0)
+    {
+
+    }
+    else if(strcmp(cmd, "write")==0)
+    {
+
+    }
+    else if(strcmp(cmd, "cat")==0)
+    {
+
+    }
+    else if(strcmp(cmd, "cp")==0)
+    {
+
+    }
+    else if(strcmp(cmd, "head")==0)
+    {
+
+    }
+    else if(strcmp(cmd, "tail")==0)
+    {
+      
+    }
+
+/**************************************************MISC***************************************************/
+    else if (strcmp(cmd, "show")==0)
+    {
       show_dir(running->cwd);
-     }
-     else if (strcmp(cmd, "hits")==0)
-     {
+    }
+    else if (strcmp(cmd, "hits")==0)
+    {
       hit_ratio();
-     }
-     else if (strcmp(cmd, "exit")==0)
-     {
+    }
+    else if (strcmp(cmd, "exit")==0)
+    {
       quit();
-     }
-     else
-     {
-        printf("Command not found");
+    }
+    else
+    {
+      printf("Command not found");
     }
   }
 }
