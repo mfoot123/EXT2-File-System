@@ -73,7 +73,7 @@ int init()
   requests = hits = 0;         // for hit_ratio of minodes cache
 }
 
-char *disk = "diskimage";
+char *disk = "disk2";
 
 int main(int argc, char *argv[ ])
 {
