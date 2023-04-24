@@ -38,6 +38,7 @@ OFT oft[32];
 #include "mkdir_create.c"
 #include "dalloc.c"
 #include "link_unlink.c"
+#include "read.c"
 
 int init()
 {
@@ -210,7 +211,7 @@ int main(int argc, char *argv[ ])
     }
     else if(strcmp(cmd, "read")==0)
     {
-
+      read_file();
     }
     else if(strcmp(cmd, "write")==0)
     {
@@ -230,7 +231,7 @@ int main(int argc, char *argv[ ])
     }
     else if(strcmp(cmd, "tail")==0)
     {
-      
+
     }
 
 /**************************************************MISC***************************************************/
