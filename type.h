@@ -92,6 +92,8 @@ extern int  fd, dev;
 extern char cmd[16], pathname[128], parameter[128];
 extern int  requests, hits;
 
+/************************************************LEVEL 1***************************************************/
+
 // util.c
 int get_block(int dev, int blk, char buf[ ]);
 int put_block(int dev, int blk, char buf[ ]);
@@ -116,5 +118,14 @@ int rm_child(MINODE *parent, char *name);
 // mkdir_creat
 int enter_child(MINODE *pip, int myino, char *myname);
 int my_creat(MINODE *pip, char *name);
+
+/*********************************************************************************************************/
+
+/************************************************LEVEL 2***************************************************/
+
+// cat_cp.c
+
+int my_cat(char *filename);
+int my_cp(char *src, char *dest);
 
 #endif
