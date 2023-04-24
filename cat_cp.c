@@ -41,13 +41,13 @@ int my_cp(char *src, char *dest)
 
     // 1. fd = open src for READ;
     if ((fd = open(src, O_RDONLY)) == -1) {
-        perror("open");
+        printf("Error: fd O_RDONLY == -1\n");
         return -1;
     }
 
     // 2. gd = open dst for WR|CREAT; 
     if ((gd = open(dest, O_WRONLY | O_CREAT, 0644)) == -1) {
-        perror("open");
+        printf("Error: gd O_WRONLY | O_CREAT == -1\n");
         close(fd);
         return -1;
     }
@@ -60,7 +60,7 @@ int my_cp(char *src, char *dest)
     {
         if (write(gd, buf, n) != n) 
         {
-            perror("write");
+            printf("Error: write != n\n");
             close(fd);
             close(gd);
             return -1;
@@ -71,7 +71,7 @@ int my_cp(char *src, char *dest)
 
     // Check for errors during reading
     if (n < 0) {
-        perror("read");
+        printf("Error: n < 0\n");
         close(fd);
         close(gd);
         return -1;
