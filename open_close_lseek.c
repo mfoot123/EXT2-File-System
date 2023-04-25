@@ -159,17 +159,15 @@ int myTruncate(MINODE *mip)
  ***********************************************************************/
 int close_file(int fd)
 {
-// 1. verify fd is within range.
-    if (fd == NULL)
-    { // Check if fileDiscriptor is not null
-        return -1;
-    }
+    // 1. verify fd is within range.
     if (fd < 0 || fd > 15)
     { // Check if fieDiscriptor is within range
+        printf("File Discriptor is not within range");
         return -1;
     }
+    printf("File is within range\n");
 
-// 2. verify running->fd[fd] is pointing at a OFT entry
+    // 2. verify running->fd[fd] is pointing at a OFT entry
     if(running->fd[fd] == NULL){
         printf("ERROR: not pointing at oft entry");
         return -1;
@@ -185,6 +183,7 @@ int close_file(int fd)
     // last user of this OFT entry ==> dispose of its minode
     MINODE *mip = oftp->inodeptr;
     iput(mip);
+    printf("File Discriptor %d closed\n", fd);
     return 0;
 }
 
@@ -272,9 +271,27 @@ int pfd()
  * References:
  ***********************************************************************/
 int dup(int fd){
-//   verify fd is an opened descriptor;
-//   duplicates (copy) fd[fd] into FIRST empty fd[ ] slot;
-//   increment OFT's shareCount by 1;
+    //   verify fd is an opened descriptor;
+    int fd = open_file(pathname, READ);
+
+    if(fd < 0){
+        printf("File Discriptor is not open");
+        return -1;
+    }
+        //   duplicates (copy) fd[fd] into FIRST empty fd[ ] slot;
+    for (int i = 0; i < NFD; i++)//Need to allocate and empty fd slot
+    {
+        if (oft[i].shareCount == 0)
+        {
+            oft[i].mode = running->fd[fd]->mode; // mode = 0|1|2|3 for R|W|RW|APPEND (swapped with mode)
+            oft[i].inodeptr = running->fd[fd]->inodeptr; // point at the file's minode[]
+            oft[i].offset = running->fd[fd]->offset;
+            oft[i].shareCount = 1; // increment OFT's shareCount by 1;
+            printf("Successfully copied");
+            return 0;
+        }
+    }
+    
     return 0;
 }
 
@@ -287,8 +304,19 @@ int dup(int fd){
  ***********************************************************************/
 int dup2(int fd, int gd)
 {
-//   CLOSE gd fisrt if it's already opened;
+    // CLOSE gd fisrt if it's already opened;
+    int gd = open_file(pathname, READ);
+    if (gd < 0)
+    {
+        printf("Group Discriptor is open");
+        close_file(gd);
+    }
+
 //   duplicates fd[fd] into fd[gd];
-//   increment OFT's shareCount by 1;
+    running->fd[gd]->mode = running->fd[fd]->mode;         // mode = 0|1|2|3 for R|W|RW|APPEND (swapped with mode)
+    running->fd[gd]->inodeptr = running->fd[fd]->inodeptr; // point at the file's minode[]
+    running->fd[gd]->offset = running->fd[fd]->offset;
+    oft[gd].shareCount = 1; // increment OFT's shareCount by 1;
+    printf("Successfully copied");
     return 0;
 }

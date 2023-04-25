@@ -5,14 +5,14 @@ int my_cat(char *filename) {
     int n;
 
     // 1. int fd = open filename for READ;
-    int fd = open(filename, O_RDONLY);
-
+    int fd = open_file(filename, READ);
+    printf("Maybe works: %d", fd);
     // check that the file is open
     if (fd < 0) {
         printf("Failed to open file: %s\n", filename);
         return -1;
     }
-
+    
     // 2. while( n = read(fd, mybuf[1024], 1024)){
     while ((n = read(fd, mybuf, 1024)) > 0) {
         // mybuf[n] = 0;             // as a null terminated string
