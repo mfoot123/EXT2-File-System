@@ -45,7 +45,14 @@ int open_file(char* pathname, int mode)// have arguements
     // Check whether the file is ALREADY opened with INCOMPATIBLE mode:
     // If it's already opened for W, RW, APPEND : reject.
     // that is, only multiple READs of the SAME file are OK
-    if (mode != READ) // Check if mip is currently being accessed, if it is then mode=0, if not then -1
+
+
+    // we need to search the entire table for an fd with the same inode number w/ incompaitble mode
+
+    // Incompatible modes:
+    // opening for read => Any FD open to the file that ISNT read
+    // ANything else => 
+    if (mode == WRITE || mode == READ_WRITE || mode == APPEND) // Check if mip is currently being accessed, if it is then mode=0, if not then -1
     {
         printf("File is on either W|RW|or APPEND/\n");
         return -1;
@@ -53,7 +60,7 @@ int open_file(char* pathname, int mode)// have arguements
     // If statement that checks only multiple reads of the same file are ok//////////////////////////////////////////////////////////////////////////
 
     // 4. allocate a FREE OpenFileTable (OFT) and fill in values:
-    OFT *oftp = NULL; // Allocates the OpenFileTable
+    OFT *oftp = malloc(sizeof(OFT)); // Allocates the OpenFileTable
     oftp->mode = mode; // mode = 0|1|2|3 for R|W|RW|APPEND (swapped with mode)
     oftp->shareCount = 1;
     oftp->inodeptr = mip; // point at the file's minode[]
