@@ -219,7 +219,7 @@ int main(int argc, char *argv[ ])
     }
     else if(strcmp(cmd, "cat")==0)
     {
-
+      
     }
     else if(strcmp(cmd, "cp")==0)
     {
