@@ -195,7 +195,7 @@ int main(int argc, char *argv[ ])
 /************************************************LEVEL 2***************************************************/
     else if(strcmp(cmd, "open")==0)
     {
-
+      open_file();
     }
     else if(strcmp(cmd, "close")==0)
     {
