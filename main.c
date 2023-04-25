@@ -39,6 +39,9 @@ OFT oft[32];
 #include "dalloc.c"
 #include "link_unlink.c"
 #include "read.c"
+#include "open_close_lseek.c"
+#include "write.c"
+#include "cat_cp.c"
 
 int init()
 {
@@ -195,7 +198,23 @@ int main(int argc, char *argv[ ])
 /************************************************LEVEL 2***************************************************/
     else if(strcmp(cmd, "open")==0)
     {
-      open_file();
+      int mode;
+      if (strcmp(parameter, "R"))
+      {
+        mode = READ;
+      }
+      else if(strcmp(parameter, "W")){
+        mode = WRITE;
+      }
+      else if (strcmp(parameter, "RW"))
+      {
+        mode = READ_WRITE;
+      }
+      else
+      {
+        mode = APPEND;
+      }
+      open_file(pathname, mode);
     }
     else if(strcmp(cmd, "close")==0)
     {

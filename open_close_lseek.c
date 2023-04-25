@@ -7,58 +7,59 @@
  * Used in: 
  * References: 
  ***********************************************************************/
-int open_file()
+int open_file(char* pathname, int mode)// have arguements
 {
-    printf("Tokenize: echo names: %s", pathname);
+    printf("Tokenize: echo names: %s\n", pathname);
     char sbuf[BLKSIZE];
 
     // 1. ASSUME open pathname mode   # mode = 0|1|2|3 for R|W|RW|APPEND
-    int mode = running->fd[fd]->mode;
+    //int mode = running->fd[fd]->mode;
 
     // 2. get pathname's minode pointer:
     MINODE *mip = path2inode(pathname);
 
     // 3. If path currently does not exist
     if (!mip) // If Pathname does not exist
-    { 
-        if (mode == 0) // If READ: file must exist
+    {
+        printf("ERROR: mip does not exists");
+        if (mode == READ) // If READ: file must exist
         {
             printf("ERROR: Mode is on read");
             return -1;
         }
-        
         creat_file(pathname); // creat(); make sure creat_file() uses pathname
         mip = path2inode(pathname); //Repeating step 2
     }
-    printf("Search for %s in inode# %d", pathname, mip->id);
+
+    printf("Search for %s in inode# %d\n", pathname, mip->id);
     get_block(dev, mip->INODE.i_block[0], sbuf);
     printf("i_block[0] = %d\n", mip->INODE.i_block[0]);
-    show_dir(mip); // print mips[dev, ino]
+    show_dir(mip); // print mips[dev, ino]//////////////////////////////////////////////Issue begins here
 
     // 4. check mip->INODE.i_mode to verify it's a REGULAR file
     if (!S_ISREG(mip->INODE.i_mode)){
-        printf("ERROR: does not work");
+        printf("ERROR: does not work\n");
         return -1;
     }
 
     // Check whether the file is ALREADY opened with INCOMPATIBLE mode:
     // If it's already opened for W, RW, APPEND : reject.
     // that is, only multiple READs of the SAME file are OK
-    if (mode != 0)
+    if (mode != READ) // Check if mip is currently being accessed, if it is then mode=0, if not then -1
     {
-        printf("File is on either W|RW|or APPEND/");
+        printf("File is on either W|RW|or APPEND/\n");
         return -1;
     }
     // If statement that checks only multiple reads of the same file are ok//////////////////////////////////////////////////////////////////////////
 
     // 4. allocate a FREE OpenFileTable (OFT) and fill in values:
-    OFT *oftp = running->fd[15]; // Find a way to allocate the OFT//////////////////////////////////////////////////////////////////////////////////
-    oftp->mode = mode; // mode = 0|1|2|3 for R|W|RW|APPEND
+    OFT *oftp = NULL; // Allocates the OpenFileTable
+    oftp->mode = mode; // mode = 0|1|2|3 for R|W|RW|APPEND (swapped with mode)
     oftp->shareCount = 1;
     oftp->inodeptr = mip; // point at the file's minode[]
 
     //   5. Depending on the open mode 0|1|2|3, set the OFT's offset accordingly:
-    switch (mode)
+    switch (mode) // swapped with mode
     {
     case 0:
         oftp->offset = 0; // R: offset = 0
@@ -84,7 +85,7 @@ int open_file()
     {
         if (running->fd[i] = NULL)
         {
-            printf("Null found");
+            printf("Null found\n");
             running->fd[i] = oftp; //  Let running->fd[i] point at the OFT entry
             break;
         }
@@ -92,14 +93,15 @@ int open_file()
 
     // 8. update INODE's time field
     // R: touch atime.
-    if (mode == 0)
+    if (mode == READ)
     {
-        mip->INODE.i_atime; // how do I update? /////////////////////////////////////////////////////////////////////////////////////////////////
+        mip->INODE.i_atime=time(0L); // how do I update? /////////////////////////////////////////////////////////////////////////////////////////////////
     }
-
-    // W|RW|APPEND mode : touch atime and mtime
-    mip->INODE.i_atime; // How do I update? ////////////////////////////////////////////////////////////////////////////////////////////////////
-    mip->INODE.i_mtime; // Same deal? /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    else{
+        // W|RW|APPEND mode : touch atime and mtime
+        mip->INODE.i_atime=time(0L); // How do I update? ////////////////////////////////////////////////////////////////////////////////////////////////////
+        mip->INODE.i_mtime=time(0L); // Same deal? /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    }
     mip->modified = 1; // mark Minode[ ] MODIFIED
 
     // 9. return i as the file descriptor
@@ -113,7 +115,7 @@ int open_file()
  * Used in:
  * References:
  ***********************************************************************/
-int truncate(MINODE *mip)
+int myTruncate(MINODE *mip)
 {
 //   1. release mip->INODE's data blocks;  // SAME as print data blocks in LAB6
     
@@ -173,7 +175,7 @@ int close_file(int fd)
  * Used in:
  * References:
  ***********************************************************************/
-int lseek(int fd, int position)
+int myLSeek(int fd, int position)
 {
 //       From fd, find the OFT entry. 
     if (fd == NULL){ //Check if fileDiscriptor is not null
@@ -215,6 +217,13 @@ int pdf()
 //          1     WRITE      0   [dev, ino]
 //       --------------------------------------
 //   to help the user know what files has been opened.
+    printf("fd\tmode\toffset\tINODE [dev, ino]\n");
+    for (int i = 0; i < NFD; i++)
+    {
+        if (running->fd[i] == NULL)
+            break;
+        printf("%d\t%s\t%d\t[%d, %d]\n", i, running->fd[i]->mode, running->fd[i]->offset, running->fd[i]->inodeptr->dev, running->fd[i]->inodeptr->ino);
+    }
     return 0;
 }
 
