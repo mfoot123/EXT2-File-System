@@ -272,7 +272,7 @@ int pfd()
  ***********************************************************************/
 int dup(int fd){
     //   verify fd is an opened descriptor;
-    int fd = open_file(pathname, READ);
+    fd = open_file(pathname, READ);
 
     if(fd < 0){
         printf("File Discriptor is not open");
@@ -305,7 +305,7 @@ int dup(int fd){
 int dup2(int fd, int gd)
 {
     // CLOSE gd fisrt if it's already opened;
-    int gd = open_file(pathname, READ);
+    gd = open_file(pathname, READ);
     if (gd < 0)
     {
         printf("Group Discriptor is open");
