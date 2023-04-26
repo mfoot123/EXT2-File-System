@@ -6,7 +6,7 @@ int my_cat(char *filename)
     int n;
 
     // 1. int fd = open filename for READ;
-    int fd = open(filename, O_RDONLY);
+    int fd = open_file(filename, 0);
 
     // test case
     if (fd < 0) {
@@ -21,7 +21,7 @@ int my_cat(char *filename)
         spit out chars from mybuf[ ] but handle \n properly;
         } 
     */
-    while (n = read(fd, mybuf, 1024)) {
+    while (n = myread(fd, mybuf, 1024)) {
         mybuf[n] = 0;
         char *cp = mybuf;
         while (*cp != '\0') {
@@ -37,7 +37,7 @@ int my_cat(char *filename)
     }
 
     // 3. close(fd);
-    close(fd);
+    close_file(fd);
     return 0;
 }
 
