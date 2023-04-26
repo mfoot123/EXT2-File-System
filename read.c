@@ -23,6 +23,7 @@ int myread(int fd, char *buf, int nbytes)
 {
     int count = 0;
     OFT *oftp = running->fd[fd];
+    //printf("fd[fd] = %d\n", fd);
     MINODE *mip = oftp->inodeptr;
     int fileSize = mip->INODE.i_size;
     int avil = fileSize - oftp->offset; // number of bytes still available in file
@@ -33,6 +34,7 @@ int myread(int fd, char *buf, int nbytes)
 
         // Compute LOGICAL BLOCK number lbk and startByte in that block from offset
         int lbk = oftp->offset / BLKSIZE;
+        //printf("lbk = %d\n", lbk);
         int startByte = oftp->offset % BLKSIZE;
 
         int blk;
@@ -76,6 +78,7 @@ int myread(int fd, char *buf, int nbytes)
 
         while (remain > 0) 
         {
+            /*
             // check for full block
             if(remain < avil)
             {
@@ -97,6 +100,12 @@ int myread(int fd, char *buf, int nbytes)
                 nbytes -= avil;
                 avil -= avil;
             }
+            */
+
+            *cq++ = *cp++;             // copy byte from readbuf[] into buf[]
+             oftp->offset++;           // advance offset 
+             count++;                  // inc count as number of bytes read
+             avil--; nbytes--;  remain--;
 
             if (nbytes <= 0 || avil <= 0) {
                 break;
@@ -106,7 +115,7 @@ int myread(int fd, char *buf, int nbytes)
         // If one data block is not enough, loop back to OUTER while for more
     }
 
-    printf("myread: read %d char from file descriptor %d\n", count, fd);
+    //printf("myread: read %d char from file descriptor %d\n", count, fd);
 
     return count; // count is the actual number of bytes read
 }
