@@ -198,8 +198,10 @@ int main(int argc, char *argv[ ])
 /************************************************LEVEL 2***************************************************/
     else if(strcmp(cmd, "open")==0)
     {
-      int mode;
-      if (strcmp(parameter, "R"))
+      int mode = atoi(parameter);
+      //printf("Mode: %d\n", mode);
+      /*
+      if (strcmp(parameter, "R") == 0)
       {
         mode = READ;
       }
@@ -214,6 +216,7 @@ int main(int argc, char *argv[ ])
       {
         mode = APPEND;
       }
+      */
       open_file(pathname, mode);
     }
     else if(strcmp(cmd, "close")==0)
