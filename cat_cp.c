@@ -1,30 +1,38 @@
 #include "type.h"
 
-int my_cat(char *filename) {
+int my_cat(char *filename) 
+{
     char mybuf[1024], dummy = 0;
     int n;
 
     // 1. int fd = open filename for READ;
-    int fd = open_file(filename, READ);
-    printf("Maybe works: %d", fd);
-    // check that the file is open
+    int fd = open(filename, O_RDONLY);
+
+    // test case
     if (fd < 0) {
-        printf("Failed to open file: %s\n", filename);
+        perror("Error: unable to open file");
         return -1;
     }
-    
-    // 2. while( n = read(fd, mybuf[1024], 1024)){
-    while ((n = read(fd, mybuf, 1024)) > 0) {
-        // mybuf[n] = 0;             // as a null terminated string
+
+    /*
+        2. while( n = read(fd, mybuf[1024], 1024)){
+        mybuf[n] = 0;             // as a null terminated string
+        // printf("%s", mybuf);   <=== THIS works but not good
+        spit out chars from mybuf[ ] but handle \n properly;
+        } 
+    */
+    while (n = read(fd, mybuf, 1024)) {
         mybuf[n] = 0;
-        for (int i = 0; i < n; i++) {
+        char *cp = mybuf;
+        while (*cp != '\0') {
             // handle \n properly
-            if (mybuf[i] == '\n') {
+            if (*cp == '\n') {
                 putchar('\n');
+            // spit out chars from mybuf[]
             } else {
-                // spit out chars from mybuf[ ]
-                putchar(mybuf[i]);
+                putchar(*cp);
             }
+            cp++;
         }
     }
 
@@ -33,51 +41,34 @@ int my_cat(char *filename) {
     return 0;
 }
 
-int my_cp(char *src, char *dest)
+
+int my_cp(char *src, char *dest) 
 {
-    // variables:
-    int fd, gd, n;
+    int n = 0;
     char buf[BLKSIZE];
 
     // 1. fd = open src for READ;
-    if ((fd = open(src, O_RDONLY)) == -1) {
-        printf("Error: fd O_RDONLY == -1\n");
-        return -1;
-    }
+    int fd = open(src, O_RDONLY);
 
     // 2. gd = open dst for WR|CREAT; 
-    if ((gd = open(dest, O_WRONLY | O_CREAT, 0644)) == -1) {
-        printf("Error: gd O_WRONLY | O_CREAT == -1\n");
-        close(fd);
+    int gd = open(dest, O_WRONLY | O_CREAT, 0666);
+
+    if (fd == -1 || gd == -1) {
+        if (gd != -1) close(gd);
+        if (fd != -1) close(fd);
         return -1;
     }
 
-    /* 3. while( n=read(fd, buf[ ], BLKSIZE) ){
-          write(gd, buf, n);  // notice the n in write()
-          }
-    */
-    while ((n = read(fd, buf, BLKSIZE)) > 0) 
-    {
-        if (write(gd, buf, n) != n) 
-        {
-            printf("Error: write != n\n");
-            close(fd);
-            close(gd);
-            return -1;
+    /*
+        3. while( n=read(fd, buf[ ], BLKSIZE) ){
+            write(gd, buf, n);  // notice the n in write()
         }
-        else
+    */
+    while (n = read(fd, buf, BLKSIZE)) {
         write(gd, buf, n);
     }
 
-    // Check for errors during reading
-    if (n < 0) {
-        printf("Error: n < 0\n");
-        close(fd);
-        close(gd);
-        return -1;
-    }
-
-    // Close files and return success
+    // close the directories
     close(fd);
     close(gd);
     return 0;
