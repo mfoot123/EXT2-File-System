@@ -235,14 +235,18 @@ int main(int argc, char *argv[ ])
     }
     else if(strcmp(cmd, "read")==0)
     {
-      sscanf(line, "%s %d %s", cmd, &fd, pathname);
+      //sscanf(line, "%s %d %s", cmd, &fd, pathname);
       //printf("fd: %d\n", fd);
       //printf("pathname: %s\n", pathname);
-      myread(fd, pathname, sizeof(pathname));
+      myread(atoi(pathname), buf, atoi(parameter));
+      //puts(buf);
     }
     else if(strcmp(cmd, "write")==0)
     {
-
+      //sscanf(line, "%s %d %s", cmd, &fd, pathname);
+      //printf("fd: %d\n", fd);
+      //printf("pathname: %s\n", pathname);
+      mywrite(fd, parameter, atoi(pathname));
     }
     else if(strcmp(cmd, "cat")==0)
     {
