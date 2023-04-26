@@ -48,15 +48,22 @@ int open_file(char* pathname, int mode)// have arguements
 
 
     // we need to search the entire table for an fd with the same inode number w/ incompaitble mode
-
-    // Incompatible modes:
-    // opening for read => Any FD open to the file that ISNT read
-    // ANything else => 
-    if (mode == WRITE || mode == READ_WRITE || mode == APPEND) // Check if mip is currently being accessed, if it is then mode=0, if not then -1
+    // loop through j < NFD
+    for(int j = 0; j < NFD; j++)
     {
-        printf("File is on either W|RW|or APPEND/\n");
-        return -1;
+        // make sure running->fd == mip->ino
+        if(running->fd[j] && running->fd[j]->inodeptr->ino == mip->ino)
+        {
+            //running->fd.mode != 0
+            if(running->fd[j]->mode != 0)
+            {
+                // error
+                printf("Error: File is open for Read Write or Append\n");
+                return -1;
+            }
+        }
     }
+    
     // If statement that checks only multiple reads of the same file are ok//////////////////////////////////////////////////////////////////////////
 
     // 4. allocate a FREE OpenFileTable (OFT) and fill in values:
@@ -87,15 +94,16 @@ int open_file(char* pathname, int mode)// have arguements
     }
 
     // 7. find the SMALLEST index i in running PROC's fd[ ] such that fd[i] is NULL
-    int i;
+    int i = 0;
     while (i < NFD)
     {
-        if (running->fd[i] = NULL)
+        if (running->fd[i] == NULL)
         {
             printf("Null found\n");
             running->fd[i] = oftp; //  Let running->fd[i] point at the OFT entry
             break;
         }
+        ++i;
     }
 
     // 8. update INODE's time field
@@ -112,6 +120,7 @@ int open_file(char* pathname, int mode)// have arguements
     mip->modified = 1; // mark Minode[ ] MODIFIED
 
     // 9. return i as the file descriptor
+    printf("fd = %d\n", i);
     return i;
 }
 
