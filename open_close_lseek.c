@@ -67,26 +67,30 @@ int open_file(char* pathname, int mode)// have arguements
     // If statement that checks only multiple reads of the same file are ok//////////////////////////////////////////////////////////////////////////
 
     // 4. allocate a FREE OpenFileTable (OFT) and fill in values:
-    OFT *oftp = malloc(sizeof(OFT)); // Allocates the OpenFileTable
-    oftp->mode = mode; // mode = 0|1|2|3 for R|W|RW|APPEND (swapped with mode)
-    oftp->shareCount = 1;
-    oftp->inodeptr = mip; // point at the file's minode[]
+    for(int i = 0; i < NFD; i++)
+    {
+        if(oft[i].shareCount == 0) {
+            oft[i].mode = mode; // mode = 0|1|2|3 for R|W|RW|APPEND (swapped with mode)
+            oft[i].shareCount = 1;
+            oft[i].inodeptr = mip; // point at the file's minode[]
+        }
+    }
 
     //   5. Depending on the open mode 0|1|2|3, set the OFT's offset accordingly:
     switch (mode) // swapped with mode
     {
     case 0:
-        oftp->offset = 0; // R: offset = 0
+        oft->offset = 0; // R: offset = 0
         break;
     case 1:
         truncate(mip); // W: truncate file to 0 size ----> We need Truncate to work///////////////////////////////////////////////////////////////////
-        oftp->offset = 0;
+        oft->offset = 0;
         break;
     case 2:
-        oftp->offset = 0; // RW: do NOT truncate file
+        oft->offset = 0; // RW: do NOT truncate file
         break;
     case 3:
-        oftp->offset = mip->INODE.i_size; // APPEND mode
+        oft->offset = mip->INODE.i_size; // APPEND mode
         break;
     default:
         printf("invalid mode\n");
@@ -100,7 +104,7 @@ int open_file(char* pathname, int mode)// have arguements
         if (running->fd[i] == NULL)
         {
             printf("Null found\n");
-            running->fd[i] = oftp; //  Let running->fd[i] point at the OFT entry
+            running->fd[i] = oft; //  Let running->fd[i] point at the OFT entry
             break;
         }
         ++i;
@@ -238,7 +242,7 @@ int pfd()
     {
         if (running->fd[i] == NULL)
             break;
-        printf("%d\t%s\t%d\t[%d, %d]\n", i, oft->mode, oft->offset, oft->inodeptr->dev, oft->inodeptr->ino);
+        printf("%d\t%s\t%d\t[%d, %d]\n", i, oft[i].mode, oft[i].offset, oft[i].inodeptr->dev, oft[i].inodeptr->ino);
     }
     return 0;
 }
