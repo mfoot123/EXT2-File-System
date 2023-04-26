@@ -74,15 +74,16 @@ int myread(int fd, char *buf, int nbytes)
 
         // Copy from startByte to buf[], at most remain bytes in this block
         char *cp = readbuf + startByte;
+        // remain is how much is left in the read buf
+        // avil is how much is left in file
+        // we use smallest num to we dont go over
         int remain = BLKSIZE - startByte; // number of bytes remaining in readbuf[]
 
-        while (remain > 0) 
-        {
-            /*
-            // check for full block
             if(remain < avil)
             {
                 // dec by remain
+                // enter child by the num of entries
+
                 strncpy(cq, cp, remain); // copy byte from readbuf[] into buf[]
                 oftp->offset += remain; // advance offset
                 count += remain; // increment count as number of bytes read
@@ -97,20 +98,18 @@ int myread(int fd, char *buf, int nbytes)
                 oftp->offset += avil; // advance offset
                 count += avil; // increment count as number of bytes read
                 remain -= avil;
-                nbytes -= avil;
+                // we know were done becuase avil is whats left in the file
+                nbytes = 0;
                 avil -= avil;
             }
-            */
 
+
+            /*
             *cq++ = *cp++;             // copy byte from readbuf[] into buf[]
-             oftp->offset++;           // advance offset 
-             count++;                  // inc count as number of bytes read
-             avil--; nbytes--;  remain--;
-
-            if (nbytes <= 0 || avil <= 0) {
-                break;
-            }
-        }
+            oftp->offset++;           // advance offset 
+            count++;                  // inc count as number of bytes read
+            avil--; nbytes--;  remain--;
+            */
 
         // If one data block is not enough, loop back to OUTER while for more
     }
