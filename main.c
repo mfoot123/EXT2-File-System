@@ -42,6 +42,7 @@ OFT oft[32];
 #include "open_close_lseek.c"
 #include "write.c"
 #include "cat_cp.c"
+#include "head_tail.c"
 
 int init()
 {
@@ -258,7 +259,7 @@ int main(int argc, char *argv[ ])
     }
     else if(strcmp(cmd, "head")==0)
     {
-
+      head(pathname);
     }
     else if(strcmp(cmd, "tail")==0)
     {
