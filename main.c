@@ -198,6 +198,7 @@ int main(int argc, char *argv[ ])
 /************************************************LEVEL 2***************************************************/
     else if(strcmp(cmd, "open")==0)
     {
+      // convert our parameter string into an int
       int mode = atoi(parameter);
       //printf("Mode: %d\n", mode);
       /*
