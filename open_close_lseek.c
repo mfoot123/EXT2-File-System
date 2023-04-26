@@ -237,12 +237,29 @@ int pfd()
 //          1     WRITE      0   [dev, ino]
 //       --------------------------------------
 //   to help the user know what files has been opened.
+    char* temp = "\0";
     printf("fd\tmode\toffset\tINODE [dev, ino]\n");
     for (int i = 0; i < NFD; i++)
     {
         if (running->fd[i] == NULL)
             break;
-        printf("%d\t%s\t%d\t[%d, %d]\n", i, oft[i].mode, oft[i].offset, oft[i].inodeptr->dev, oft[i].inodeptr->ino);
+
+        if (oft[i].mode == READ)
+        {
+            temp = "READ";
+        }
+        else if(oft[i].mode == WRITE){
+            temp = "WRITE";
+        }
+        else if (oft[i].mode == READ_WRITE)
+        {
+            temp = "READ_WRITE";
+        }
+        else
+        {
+            temp = "APPEND";
+        }
+        printf("%d\t%s\t%d\t[%d, %d]\n", i, temp, oft[i].offset, oft[i].inodeptr->dev, oft[i].inodeptr->ino);
     }
     return 0;
 }
