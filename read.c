@@ -27,6 +27,7 @@ int myread(int fd, char *buf, int nbytes)
     int fileSize = mip->INODE.i_size;
     int avil = fileSize - oftp->offset; // number of bytes still available in file
     char *cq = buf; // cq points at buf[ ]
+    char ibuf[BLKSIZE];
 
     while (nbytes && avil) {
 
@@ -48,20 +49,22 @@ int myread(int fd, char *buf, int nbytes)
             // Load the indirect block
             get_block(mip->dev, mip->INODE.i_block[12], readbuf);
             // Get the physical block number from the indirect block
-            blk = ((int *)readbuf)[indirect_lbk];
+            blk = ibuf[indirect_lbk];
         }
         // If the logical block number is greater than or equal to 12 + 256, it's a double indirect block
         else {
+            char dibuf[256];
+            char idbuf[256];
             // Compute the logical block number relative to the start of the double indirect blocks
-            int double_indirect_lbk = lbk - 12 - 256;
+            lbk = (lbk - 12 - 256) % 256;
             // Load the double indirect block
-            get_block(mip->dev, mip->INODE.i_block[13], readbuf);
+            get_block(mip->dev, mip->INODE.i_block[13], dibuf);
             // Get the physical block number of the indirect block from the double indirect block
-            int indirect_blk = ((int *)readbuf)[double_indirect_lbk / 256];
+            int indirect_blk = ((int *)readbuf)[lbk / 256];
             // Load the indirect block
             get_block(mip->dev, indirect_blk, readbuf);
             // Get the physical block number from the indirect block
-            blk = ((int *)readbuf)[double_indirect_lbk % 256];
+            blk = ibuf[lbk];
         }
 
         // Load the data block into readbuf[BLKSIZE]
@@ -71,13 +74,30 @@ int myread(int fd, char *buf, int nbytes)
         char *cp = readbuf + startByte;
         int remain = BLKSIZE - startByte; // number of bytes remaining in readbuf[]
 
-        while (remain > 0) {
-            *cq++ = *cp++; // copy byte from readbuf[] into buf[]
-            oftp->offset++; // advance offset
-            count++; // increment count as number of bytes read
-            avil--;
-            nbytes--;
-            remain--;
+        while (remain > 0) 
+        {
+            // check for full block
+            if(remain < avil)
+            {
+                // dec by remain
+                strncpy(cq, cp, remain); // copy byte from readbuf[] into buf[]
+                oftp->offset += remain; // advance offset
+                count += remain; // increment count as number of bytes read
+                avil -= remain;
+                nbytes -= remain;
+                remain -= remain;
+            }
+            else
+            {
+                // dec by avil
+                strncpy(cq, cp, avil); // copy byte from readbuf[] into buf[]
+                oftp->offset += avil; // advance offset
+                count += avil; // increment count as number of bytes read
+                remain -= avil;
+                nbytes -= avil;
+                avil -= avil;
+            }
+
             if (nbytes <= 0 || avil <= 0) {
                 break;
             }

@@ -234,7 +234,10 @@ int main(int argc, char *argv[ ])
     }
     else if(strcmp(cmd, "read")==0)
     {
-      read_file();
+      sscanf(line, "%s %d %s", cmd, &fd, pathname);
+      //printf("fd: %d\n", fd);
+      //printf("pathname: %s\n", pathname);
+      myread(fd, pathname, sizeof(pathname));
     }
     else if(strcmp(cmd, "write")==0)
     {
