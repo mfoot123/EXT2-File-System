@@ -222,7 +222,8 @@ int main(int argc, char *argv[ ])
     }
     else if(strcmp(cmd, "close")==0)
     {
-
+      int fd = atoi(pathname);
+      close_file(fd);
     }
     else if(strcmp(cmd, "lseek")==0)
     {
@@ -245,7 +246,7 @@ int main(int argc, char *argv[ ])
     }
     else if(strcmp(cmd, "cat")==0)
     {
-      
+      my_cat(pathname);
     }
     else if(strcmp(cmd, "cp")==0)
     {
