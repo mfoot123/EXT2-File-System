@@ -226,7 +226,7 @@ int main(int argc, char *argv[ ])
     }
     else if(strcmp(cmd, "pfd")==0)
     {
-
+      pfd();
     }
     else if(strcmp(cmd, "read")==0)
     {

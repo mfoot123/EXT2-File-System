@@ -223,7 +223,7 @@ int myLSeek(int fd, int position)
  * Used in:
  * References:
  ***********************************************************************/
-int pdf()
+int pfd()
 {
 //       This function displays the currently opened files as follows:
 
@@ -238,7 +238,7 @@ int pdf()
     {
         if (running->fd[i] == NULL)
             break;
-        printf("%d\t%s\t%d\t[%d, %d]\n", i, running->fd[i]->mode, running->fd[i]->offset, running->fd[i]->inodeptr->dev, running->fd[i]->inodeptr->ino);
+        printf("%d\t%s\t%d\t[%d, %d]\n", i, oft->mode, oft->offset, oft->inodeptr->dev, oft->inodeptr->ino);
     }
     return 0;
 }
