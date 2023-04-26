@@ -48,14 +48,14 @@ int my_cp(char *src, char *dest)
     char buf[BLKSIZE];
 
     // 1. fd = open src for READ;
-    int fd = open(src, O_RDONLY);
+    int fd = open_file(src, O_RDONLY);
 
     // 2. gd = open dst for WR|CREAT; 
-    int gd = open(dest, O_WRONLY | O_CREAT, 0666);
+    int gd = open_file(dest, READ_WRITE);
 
     if (fd == -1 || gd == -1) {
-        if (gd != -1) close(gd);
-        if (fd != -1) close(fd);
+        if (gd != -1) close_file(gd);
+        if (fd != -1) close_file(fd);
         return -1;
     }
 
@@ -64,12 +64,12 @@ int my_cp(char *src, char *dest)
             write(gd, buf, n);  // notice the n in write()
         }
     */
-    while (n = read(fd, buf, BLKSIZE)) {
-        write(gd, buf, n);
+    while (n = myread(fd, buf, BLKSIZE)) {
+        mywrite(gd, buf, n);
     }
 
     // close the directories
-    close(fd);
-    close(gd);
+    close_file(fd);
+    close_file(gd);
     return 0;
 }
