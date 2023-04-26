@@ -1,5 +1,5 @@
 rm a.out
-echo copy disk2.1 to disk2
-cp diskimage.1 diskimage
+echo copy disk2.2 to disk2
+cp disk2.1 disk2
 gcc -g main.c
 ./a.out
