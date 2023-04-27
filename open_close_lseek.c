@@ -73,7 +73,7 @@ int open_file(const char *pathname, int mode)
             oftp->offset = 0;
             break;
         case 1: // W: truncate file to 0 size
-            truncate_file(mip);
+            truncate(mip);
             oftp->offset = 0;
             break;
         case 2: // RW: do not truncate file
