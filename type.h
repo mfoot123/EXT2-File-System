@@ -129,4 +129,10 @@ int show_dir(MINODE *mip);
 int my_cat(char *filename);
 int my_cp(char *src, char *dest);
 
+// read.c
+int myread(int fd, char *buf, int nbytes);
+
+// head_tail.c
+int head(char *pathname);
+
 #endif
