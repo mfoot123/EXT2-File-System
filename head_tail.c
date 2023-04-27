@@ -56,16 +56,14 @@ int tail(char *pathname){
     // 2. get file_size (in its INODE.i_size)
     MINODE *mip = path2inode(pathname);
     int fileSize = mip->INODE.i_size;
-    int position;
-    if (fileSize > BLKSIZE)
+    if(fileSize < BLKSIZE)
     {
         printf("ERROR: FileSize is less than the block's\n");
-        position = myLSeek(fd, 0);
-        // return -1;
+        return -1;
     }
 
     // 3. lssek to (file_size - BLKSIZE)      (OR to 0 if file_size < BLKSIZE)
-    position = myLSeek(fd, fileSize - BLKSIZE);
+    myLSeek(fd, fileSize - BLKSIZE);
 
     //lseek(mip->dev, fileSize - BLKSIZE, SEEK_SET);
 
