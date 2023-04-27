@@ -7,126 +7,95 @@
  * Used in: 
  * References: 
  ***********************************************************************/
-int open_file(char* pathname, int mode)// have arguements
+int open_file(const char *pathname, int mode)
 {
-    printf("Tokenize: echo names: %s\n", pathname);
-    char sbuf[BLKSIZE];
-
-    // 1. ASSUME open pathname mode   # mode = 0|1|2|3 for R|W|RW|APPEND
-    //int mode = running->fd[fd]->mode;
-
-    // 2. get pathname's minode pointer:
-    MINODE *mip = path2inode(pathname);
-
-    // 3. If path currently does not exist
-    if (!mip) // If Pathname does not exist
-    {
-        printf("ERROR: mip does not exists");
-        if (mode == READ) // If READ: file must exist
-        {
-            printf("ERROR: Mode is on read");
-            return -1;
-        }
-        creat_file(pathname); // creat(); make sure creat_file() uses pathname
-        mip = path2inode(pathname); //Repeating step 2
-    }
-
-    printf("Search for %s in inode# %d\n", pathname, mip->id);
-    get_block(dev, mip->INODE.i_block[0], sbuf);
-    printf("i_block[0] = %d\n", mip->INODE.i_block[0]);
-    show_dir(mip); // print mips[dev, ino]//////////////////////////////////////////////Issue begins here
-
-    // 4. check mip->INODE.i_mode to verify it's a REGULAR file
-    if (!S_ISREG(mip->INODE.i_mode)){
-        printf("ERROR: does not work\n");
+    // Step 1
+    if (mode < 0 || mode > 3) {
+        printf("invalid mode\n");
         return -1;
     }
 
-    // Check whether the file is ALREADY opened with INCOMPATIBLE mode:
-    // If it's already opened for W, RW, APPEND : reject.
-    // that is, only multiple READs of the SAME file are OK
+    // Step 2
+    MINODE *mip = path2inode(pathname);
 
+    // Step 3
+    if (!mip) {
+        if (mode == 0) {
+            // READ: file must exist
+            return -1;
+        } else {
+            // mode=R|RW|APPEND: creat file first
+            creat_file(pathname);
+            mip = path2inode(pathname);
+            // print mip's [dev, ino]
+        }
+    }
 
-    // we need to search the entire table for an fd with the same inode number w/ incompaitble mode
-    // loop through j < NFD
-    for(int j = 0; j < NFD; j++)
-    {
-        // make sure running->fd == mip->ino
-        if(running->fd[j] && running->fd[j]->inodeptr->ino == mip->ino)
-        {
-            //running->fd.mode != 0
-            if(running->fd[j]->mode != 0)
-            {
-                // error
-                printf("Error: File is open for Read Write or Append\n");
+    // Verify that the file is a regular file
+    if (!S_ISREG(mip->INODE.i_mode)) {
+        printf("file is not a regular file\n");
+        iput(mip);
+        return -1;
+    }
+
+    // Check if file is already opened with incompatible mode
+    for (int i = 0; i < NFD; i++) {
+        if (running->fd[i] && running->fd[i]->inodeptr == mip) {
+            if (mode != 0) {
+                printf("file is already opened with incompatible mode\n");
+                iput(mip);
                 return -1;
             }
         }
     }
-    
-    // If statement that checks only multiple reads of the same file are ok//////////////////////////////////////////////////////////////////////////
 
-    // 4. allocate a FREE OpenFileTable (OFT) and fill in values:
-    for(int i = 0; i < NFD; i++)
-    {
-        if(oft[i].shareCount == 0) {
-            oft[i].mode = mode; // mode = 0|1|2|3 for R|W|RW|APPEND (swapped with mode)
-            oft[i].shareCount = 1;
-            oft[i].inodeptr = mip; // point at the file's minode[]
-        }
-    }
-
-    //   5. Depending on the open mode 0|1|2|3, set the OFT's offset accordingly:
-    switch (mode) // swapped with mode
-    {
-    case 0:
-        oft->offset = 0; // R: offset = 0
-        break;
-    case 1:
-        truncate(mip); // W: truncate file to 0 size ----> We need Truncate to work///////////////////////////////////////////////////////////////////
-        oft->offset = 0;
-        break;
-    case 2:
-        oft->offset = 0; // RW: do NOT truncate file
-        break;
-    case 3:
-        oft->offset = mip->INODE.i_size; // APPEND mode
-        break;
-    default:
-        printf("invalid mode\n");
-        return (-1);
-    }
-
-    // 7. find the SMALLEST index i in running PROC's fd[ ] such that fd[i] is NULL
-    int i = 0;
-    while (i < NFD)
-    {
-        if (running->fd[i] == NULL)
-        {
-            printf("Null found\n");
-            running->fd[i] = oft; //  Let running->fd[i] point at the OFT entry
+    // Step 4: Allocate a FREE OpenFileTable (OFT) and fill in values
+    int i;
+    OFT *oftp = 0;
+    for (i = 0; i < NFD; i++) {
+        if (!running->fd[i]) {
+            oftp = running->fd[i] = (OFT *)malloc(sizeof(OFT));
             break;
         }
-        ++i;
+    }
+    if (!oftp) {
+        printf("no available file descriptors\n");
+        iput(mip);
+        return -1;
+    }
+    oftp->mode = mode;
+    oftp->shareCount = 1;
+    oftp->inodeptr = mip;
+
+    // Step 5: Set the OFT's offset accordingly
+    switch (mode) {
+        case 0: // R: offset = 0
+            oftp->offset = 0;
+            break;
+        case 1: // W: truncate file to 0 size
+            truncate(mip);
+            oftp->offset = 0;
+            break;
+        case 2: // RW: do not truncate file
+            oftp->offset = 0;
+            break;
+        case 3: // APPEND mode
+            oftp->offset = mip->INODE.i_size;
+            break;
     }
 
-    // 8. update INODE's time field
-    // R: touch atime.
-    if (mode == READ)
-    {
-        mip->INODE.i_atime=time(0L); // how do I update? /////////////////////////////////////////////////////////////////////////////////////////////////
+    // Step 8: Update INODE's time field
+    time_t now = time(0L);
+    mip->INODE.i_atime = now;
+    if (mode != 0) {
+        mip->INODE.i_mtime = now;
     }
-    else{
-        // W|RW|APPEND mode : touch atime and mtime
-        mip->INODE.i_atime=time(0L); // How do I update? ////////////////////////////////////////////////////////////////////////////////////////////////////
-        mip->INODE.i_mtime=time(0L); // Same deal? /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    }
-    mip->modified = 1; // mark Minode[ ] MODIFIED
+    mip->modified = 1;
 
-    // 9. return i as the file descriptor
-    printf("fd = %d\n", i);
+    // Return the file descriptor
     return i;
 }
+
 
 /**********************************************************************
  * Function:
