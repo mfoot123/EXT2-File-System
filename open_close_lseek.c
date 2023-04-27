@@ -165,28 +165,32 @@ int close_file(int fd)
  ***********************************************************************/
 int myLSeek(int fd, int position)
 {
-//       From fd, find the OFT entry. 
-    if (fd == NULL){ //Check if fileDiscriptor is not null
-        return -1;
-    }
-    if(fd < 0|| fd > 15 ){ //Check if fieDiscriptor is within range
+    // Find the OFT entry corresponding to the given file descriptor
+    OFT *oftp = running->fd[fd];
+    if (oftp == NULL) {
+        printf("error: invalid file descriptor\n");
         return -1;
     }
 
-    OFT *oft = running->fd[fd];
-    if (oft == NULL)
-    {
-        return -1;
+    // Compute the size of the file
+    int fileSize = oftp->inodeptr->INODE.i_size;
+
+    // Make sure the new position is within the bounds of the file
+    if (position < 0) {
+        position = 0;
     }
-    int originalPosition = oft->offset;
-    oft->offset = position;
+    if (position > fileSize) {
+        position = fileSize;
+    }
 
-    //   change OFT entry's offset to position but make sure NOT to over run either end
-    //   of the file.
+    // Save the current offset and update it to the new position
+    int originalPosition = oftp->offset;
+    oftp->offset = position;
 
-    //   return originalPosition
+    // Return the original offset
     return originalPosition;
 }
+
 
 /**********************************************************************
  * Function:
