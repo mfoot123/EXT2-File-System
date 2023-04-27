@@ -43,6 +43,8 @@ OFT oft[32];
 #include "write.c"
 #include "cat_cp.c"
 #include "head_tail.c"
+#include "rmdir.c"
+#include "symlink.c"
 
 int init()
 {
