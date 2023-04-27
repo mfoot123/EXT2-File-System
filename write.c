@@ -113,7 +113,9 @@ int mywrite(int fd, char* buf, int nbytes)
             int i, j, k;
             get_block(mip->dev, ip->i_block[13], (char *) ibuf);
 
+            // calculate the index
             i = (lbk - 12 - 256) / 256;
+            // then the offset
             j = (lbk - 12 - 256) % 256;
             if (ibuf[i] == 0) {
                 // allocate a single indirect block
