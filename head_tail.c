@@ -41,23 +41,29 @@ int head(char *pathname)
     return 0;
 }
 
-int tail(char *pathname) {
-    // 1. Open file for read
+int tail(char *pathname) 
+{
+    // 1. open file for READ;
     int fd = open_file(pathname, READ);
     if (fd < 0) {
         printf("ERROR: Failed to open file.\n");
         return -1;
     }
 
-    // 2. Get file size (in its INODE.i_size)
+    // 2. get file_size (in its INODE.i_size)
     MINODE *mip = path2inode(pathname);
     int fileSize = mip->INODE.i_size;
 
-    // 3. Lseek to (file_size - BLKSIZE) (or to 0 if file_size < BLKSIZE)
+    // 3. lssek to (file_size - BLKSIZE)      (OR to 0 if file_size < BLKSIZE)
     long offset = fileSize >= BLKSIZE ? fileSize - BLKSIZE : 0;
     myLSeek(fd, offset);
 
-    // 4. Read BLKSIZE into buf[]
+    /*
+                                                                   n 	
+    4. n = read BLKSIZE into buf[ ]=|............abc\n1234\nlast\n|0|
+                                                                   |
+                                                            char *cp
+    */
     char buf[BLKSIZE + 1];
     int n = myread(fd, buf, BLKSIZE);
     if (n < 0) {
@@ -66,7 +72,7 @@ int tail(char *pathname) {
     }
     buf[n] = '\0';
 
-    // 5. Scan buf[] backwards for \n; lines++ until lines=11
+    // 5. scan buf[ ] backwards for \n;  lines++  until lines=11
     int lines = 0, i = n - 1;
     while (i >= 0 && lines < 11) {
         if (buf[i] == '\n') {
@@ -75,7 +81,7 @@ int tail(char *pathname) {
         i--;
     }
 
-    // 6. Print from cp+1 as %s
+    // 6. print from cp+1 as %s
     printf("=======================================================\n");
     printf("%s", &buf[i + 1]);
     printf("=======================================================\n");
