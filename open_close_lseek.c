@@ -165,7 +165,7 @@ int close_file(int fd)
  ***********************************************************************/
 int myLSeek(int fd, int position)
 {
-    // Find the OFT entry corresponding to the given file descriptor
+    // From fd, find the OFT entry. 
     OFT *oftp = running->fd[fd];
     if (oftp == NULL) {
         printf("error: invalid file descriptor\n");
