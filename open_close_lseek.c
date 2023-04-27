@@ -34,7 +34,7 @@ int open_file(char* pathname, int mode)// have arguements
     printf("Search for %s in inode# %d\n", pathname, mip->id);
     get_block(dev, mip->INODE.i_block[0], sbuf);
     printf("i_block[0] = %d\n", mip->INODE.i_block[0]);
-    show_dir(mip); // print mips[dev, ino]//////////////////////////////////////////////Issue begins here
+    show_dir(mip); // print mips[dev, ino]
 
     // 4. check mip->INODE.i_mode to verify it's a REGULAR file
     if (!S_ISREG(mip->INODE.i_mode)){

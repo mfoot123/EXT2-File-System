@@ -134,5 +134,6 @@ int myread(int fd, char *buf, int nbytes);
 
 // head_tail.c
 int head(char *pathname);
+int tail(char *pathname);
 
 #endif

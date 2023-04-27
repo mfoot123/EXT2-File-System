@@ -6,19 +6,23 @@ int head(char *pathname){
     if(fd != READ){ // Makes sure it is open and for
         return -1;
     }
-    
-    //2. read BLKSIZE into char buf[] = |abcd..\nnxyzw...\n...
+
     char buf[BLKSIZE];
     int links = 0;
     char firstTenLines[BLKSIZE];
 
-    // 3. scan buf[] for \n; For each \n: linkes++ until 10; add a 0 after LAST \n
+    // 2. read BLKSIZE into char buf[] = |abcd..\nnxyzw...\n...
     bzero(buf, BLKSIZE);
     myread(fd, buf, BLKSIZE);
 
+    // 3. scan buf[] for \n; For each \n: linkes++ until 10; add a 0 after LAST \n
     int i = 0;
     while (links < 10 && i < BLKSIZE)
     {
+        if (buf[i] == NULL)
+        {
+            break;
+        }
         if(buf[i] == '\n'){
             links++;
         }
@@ -27,6 +31,7 @@ int head(char *pathname){
             strncpy(firstTenLines, buf, i+1);
             break;
         }
+        
         i++;
     }
 
@@ -34,22 +39,70 @@ int head(char *pathname){
     printf("=======================================================\n");
     printf("%s\n", firstTenLines);
     printf("=======================================================\n");
+    bzero(buf, BLKSIZE);
+    close_file(fd);
     return 0;
 }
 
-int tail(){
-    /*
-    1. open file fore READ;
-    2. get file_size (in its INODE.i_size)
-    3. lssek to (file_size - BLKSIZE)      (OR to 0 if file_size < BLKSIZE)
+int tail(char *pathname){
+    
+    // 1. open file fore READ;
+    int fd = open_file(pathname, READ); // Opens file to read
+    if(fd != READ){ // Makes sure it is open and for
+        printf("ERROR: File Discriptor is not opened\n");
+        return -1;
+    }
 
-                                   n
-4. n = read BLKSIZE into buf[ ]=|............abc\n1234\nlast\n|0|
-                                                               |
-                                                        char *cp
+    // 2. get file_size (in its INODE.i_size)
+    MINODE *mip = path2inode(pathname);
+    int fileSize = mip->INODE.i_size;
+    if(fileSize < BLKSIZE)
+    {
+        printf("ERROR: FileSize is less than the block's\n");
+        return -1;
+    }
 
-5. scan buf[ ] backwards for \n;  lines++  until lines=11
-6. print from cp+1 as %s
-    */
+    // 3. lssek to (file_size - BLKSIZE)      (OR to 0 if file_size < BLKSIZE)
+    myLSeek(fd, fileSize - BLKSIZE);
+
+    //lseek(mip->dev, fileSize - BLKSIZE, SEEK_SET);
+
+    //                                                                n
+    // 4. n = read BLKSIZE into buf[ ]=|............abc\n1234\nlast\n|0|
+    //                                                                |
+    //                                                         char *cp
+    char buf[BLKSIZE];
+    int links = 0;
+    char firstTenLines[BLKSIZE];
+    bzero(buf, BLKSIZE);
+    myread(fd, buf, BLKSIZE);
+
+    // 5. scan buf[ ] backwards for \n;  lines++  until lines=11
+    int i = fileSize;
+    while (links < 11)
+    {
+        if(buf[i] == NULL)
+        {
+            break;
+        }
+        if (buf[i] == '\n')
+        {
+            links++;
+        }
+        if (links == 11)
+        {
+            strncpy(firstTenLines, buf, i + 1);
+            break;
+        }
+        i--;
+    }
+
+    // 6. print from cp+1 as %s
+    printf("=======================================================\n");
+    printf("%s\n", firstTenLines);
+    printf("=======================================================\n");
+
+    bzero(buf, BLKSIZE);
+    close_file(fd);
     return 0;
 }
