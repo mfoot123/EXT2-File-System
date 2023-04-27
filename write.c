@@ -104,8 +104,8 @@ int mywrite(int fd, char* buf, int nbytes)
             int i, j, k;
             get_block(mip->dev, ip->i_block[13], (char *) ibuf);
 
-            i = (lbk - (256 + 12)) / 256;
-            j = (lbk - (256 + 12)) % 256;
+            i = (lbk - 12 - 256) / 256;
+            j = (lbk - 12 - 256) % 256;
             if (ibuf[i] == 0) {
                 // allocate a single indirect block
                 ibuf[i] = balloc(mip->dev);
@@ -156,9 +156,9 @@ int mywrite(int fd, char* buf, int nbytes)
         // // advance offset
 
         // especially for RW|APPEND mode
-        if (oftp->offset > ip->i_size) {
-            // inc file size (if offset > fileSize)
-            mip->INODE.i_size += remain; 
+        // update file size if necessary
+        if (oftp->offset > mip->INODE.i_size) {
+            mip->INODE.i_size = oftp->offset;
         }
 
         // write wbuf[ ] to disk
@@ -166,10 +166,9 @@ int mywrite(int fd, char* buf, int nbytes)
 
         // loop back to outer while to write more .... until nbytes are written
     }
+    
     // mark mip modified for iput() 
     mip->modified = 1;
     //printf("wrote %d char into file descriptor fd=%d\n", nbytes, fd);           
     return written;
 }
-
-
