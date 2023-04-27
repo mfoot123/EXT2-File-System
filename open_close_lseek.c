@@ -9,9 +9,42 @@
  ***********************************************************************/
 int open_file(const char *pathname, int mode)
 {
+<<<<<<< HEAD
     // Step 1
     if (mode < 0 || mode > 3) {
         printf("invalid mode\n");
+=======
+    printf("Tokenize: echo names: %s\n", pathname);
+    char sbuf[BLKSIZE];
+
+    // 1. ASSUME open pathname mode   # mode = 0|1|2|3 for R|W|RW|APPEND
+    //int mode = running->fd[fd]->mode;
+
+    // 2. get pathname's minode pointer:
+    MINODE *mip = path2inode(pathname);
+
+    // 3. If path currently does not exist
+    if (!mip) // If Pathname does not exist
+    {
+        printf("ERROR: mip does not exists");
+        if (mode == READ) // If READ: file must exist
+        {
+            printf("ERROR: Mode is on read");
+            return -1;
+        }
+        creat_file(pathname); // creat(); make sure creat_file() uses pathname
+        mip = path2inode(pathname); //Repeating step 2
+    }
+
+    printf("Search for %s in inode# %d\n", pathname, mip->id);
+    get_block(dev, mip->INODE.i_block[0], sbuf);
+    printf("i_block[0] = %d\n", mip->INODE.i_block[0]);
+    show_dir(mip); // print mips[dev, ino]
+
+    // 4. check mip->INODE.i_mode to verify it's a REGULAR file
+    if (!S_ISREG(mip->INODE.i_mode)){
+        printf("ERROR: does not work\n");
+>>>>>>> refs/remotes/origin/main
         return -1;
     }
 
