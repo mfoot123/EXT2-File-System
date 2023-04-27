@@ -23,10 +23,17 @@ int write_file()
 }
 
 
+/*
+MYWRITE:
 
+fd = file descriptor 
+buf = a buffer containing data to be written
+nbytes = number of bytes to be written from the buffer
+
+*/
 int mywrite(int fd, char* buf, int nbytes)
 {
-    puts(buf);
+    //puts(buf);
     int ibuf[256];
     int *i, *j;
     int written = 0;
@@ -36,7 +43,6 @@ int mywrite(int fd, char* buf, int nbytes)
     MINODE *mip = oftp->inodeptr;
     INODE *ip = &mip->INODE;
 
-    // get the starting position for writing
     int lbk, startByte, blk;
     int remain = 0;
     
@@ -47,6 +53,7 @@ int mywrite(int fd, char* buf, int nbytes)
 
         // compute LOGICAL BLOCK (lbk) and the startByte in that lbk:
         // lbk       = oftp->offset / BLKSIZE;
+        // lbk calculates the actual disk block number on which the data will be written
         lbk = oftp->offset / BLKSIZE;
         // startByte = oftp->offset % BLKSIZE;
         startByte = oftp->offset % BLKSIZE;
@@ -60,6 +67,8 @@ int mywrite(int fd, char* buf, int nbytes)
             blk = ip->i_block[lbk];
         }
         // indirect blocks
+        // check lbk is less than the sum of the physical block number (256) 
+        //and the block offset (12)
         else if (lbk >= 12 && lbk < 256 + 12) {
             // if no indirect block yet, allocate one and zero it out
             if (ip->i_block[12] == 0) {
