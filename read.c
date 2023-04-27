@@ -28,7 +28,8 @@ int myread(int fd, char *buf, int nbytes)
     int fileSize = mip->INODE.i_size;
     int avil = fileSize - oftp->offset; // number of bytes still available in file
     char *cq = buf; // cq points at buf[ ]
-    char ibuf[BLKSIZE];
+    int idbuf[256];
+    int dibuf[256];
 
     while (nbytes && avil) {
 
@@ -49,24 +50,22 @@ int myread(int fd, char *buf, int nbytes)
             // Compute the logical block number relative to the start of the indirect blocks
             int indirect_lbk = lbk - 12;
             // Load the indirect block
-            get_block(mip->dev, mip->INODE.i_block[12], readbuf);
+            get_block(mip->dev, mip->INODE.i_block[12], idbuf);
             // Get the physical block number from the indirect block
-            blk = ibuf[indirect_lbk];
+            blk = idbuf[indirect_lbk];
         }
         // If the logical block number is greater than or equal to 12 + 256, it's a double indirect block
         else {
-            char dibuf[256];
-            char idbuf[256];
             // Compute the logical block number relative to the start of the double indirect blocks
-            lbk = (lbk - 12 - 256) % 256;
+            int dblk = lbk - 12 - 256;
             // Load the double indirect block
-            get_block(mip->dev, mip->INODE.i_block[13], dibuf);
+            get_block(mip->dev, mip->INODE.i_block[13], idbuf);
             // Get the physical block number of the indirect block from the double indirect block
-            int indirect_blk = ((int *)readbuf)[lbk / 256];
+            int indirect_blk =  idbuf[dblk / 256];
             // Load the indirect block
-            get_block(mip->dev, indirect_blk, readbuf);
+            get_block(mip->dev, indirect_blk, dibuf);
             // Get the physical block number from the indirect block
-            blk = ibuf[lbk];
+            blk = dibuf[dblk  % 256];
         }
 
         // Load the data block into readbuf[BLKSIZE]

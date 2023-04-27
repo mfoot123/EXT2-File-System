@@ -24,20 +24,12 @@ int write_file()
 
 
 
-int mywrite(int fd, char buf[], int nbytes) 
+int mywrite(int fd, char* buf, int nbytes)
 {
+    puts(buf);
     int ibuf[256];
     int *i, *j;
     int written = 0;
-
-    // get the running PROC
-    PROC *running = &proc[running->pid];
-
-    // check if fd is valid and open for writing
-    if (fd < 0 || fd >= NFD || running->fd[fd] == NULL || running->fd[fd]->mode == 0) {
-        printf("mywrite : ERROR fd is invalid or not open for writing\n");
-        return -1;
-    }
 
     // get the OFT and MINODE pointer
     OFT *oftp = running->fd[fd];
@@ -46,9 +38,10 @@ int mywrite(int fd, char buf[], int nbytes)
 
     // get the starting position for writing
     int lbk, startByte, blk;
-    int remain, cq = 0;
+    int remain = 0;
+    
     char wbuf[BLKSIZE];
-
+    char* cq = buf;
     // while (nbytes > 0 ){
     while (nbytes > 0) {
 
@@ -75,11 +68,11 @@ int mywrite(int fd, char buf[], int nbytes)
                 // zero out the block on disk !!!!
                 get_block(mip->dev, ip->i_block[12], (char *) ibuf);
                 bzero(ibuf, 0);
-                put_block(mip->dev, ip->i_block[12], (char *) ibuf);
+                put_block(mip->dev, ip->i_block[12], (char *) ibuf);    
             }
 
             // get i_block[12] into an int ibuf[256];
-            get_block(mip->dev, ip->i_block[12], (char *) ibuf);
+            get_block(mip->dev, ip->i_block[12], (char*) ibuf);
             // blk = ibuf[lbk - 12];
             blk = ibuf[lbk - 12];
 
@@ -89,6 +82,7 @@ int mywrite(int fd, char buf[], int nbytes)
 
                 // record it in ibuf[lbk - 12];
                 ibuf[lbk - 12] = blk;
+                put_block(dev, ip->i_block[12], ibuf);
             }
             // write ibuf[ ] back to disk block i_block[12];
             put_block(mip->dev, ip->i_block[12], (char *) ibuf);
@@ -96,7 +90,8 @@ int mywrite(int fd, char buf[], int nbytes)
         // double indirect blocks
         else
         {
-        // if no double indirect block yet, allocate one and zero it out
+            int dibuf[256];
+            // if no double indirect block yet, allocate one and zero it out
             if (ip->i_block[13] == 0) {
                 // allocate a block for it;
                 ip->i_block[13] = balloc(mip->dev);
@@ -106,51 +101,38 @@ int mywrite(int fd, char buf[], int nbytes)
                 put_block(mip->dev, ip->i_block[13], (char *) ibuf);
             }
 
-            // get the double indirect block into a two-dimensional array
             int i, j, k;
-            int dbuf[256];
-            get_block(mip->dev, ip->i_block[13], (char *) dbuf);
+            get_block(mip->dev, ip->i_block[13], (char *) ibuf);
 
             i = (lbk - (256 + 12)) / 256;
             j = (lbk - (256 + 12)) % 256;
-            if (dbuf[i] == 0) {
+            if (ibuf[i] == 0) {
                 // allocate a single indirect block
-                dbuf[i] = balloc(mip->dev);
+                ibuf[i] = balloc(mip->dev);
                 // zero out the block on disk !!!!
-                get_block(mip->dev, dbuf[i], (char *) ibuf);
-                bzero(ibuf, 0);
-                put_block(mip->dev, dbuf[i], (char *) ibuf);
+                get_block(mip->dev, ibuf[i], (char *)wbuf);
+                bzero(wbuf, 0);
+                put_block(mip->dev, ibuf[i], (char *)wbuf);
+                put_block(mip->dev, ip->i_block[13], ibuf);
             }
 
-            // get the single indirect block into an array
-            get_block(mip->dev, dbuf[i], (char *) ibuf);
-            k = lbk % 256;
-            if (ibuf[j] == 0) {
+            get_block(mip->dev, ibuf[i], (char *) dibuf);
+            if (dibuf[j] == 0) {
                 // allocate a data block
-                ibuf[j] = balloc(mip->dev);
+                dibuf[j] = balloc(mip->dev);
+                get_block(mip->dev, dibuf[j], wbuf);
+                bzero(wbuf, 0);
+                put_block(mip->dev, dibuf[j], wbuf);
+                put_block(mip->dev, ibuf[i], dibuf);
             }
 
             // write to the data block
-            blk = ibuf[j];
-            get_block(mip->dev, blk, wbuf);
-            char *cp = wbuf + startByte;
-            remain = BLKSIZE - startByte;
-            while (remain > 0) {
-                *cp++ = buf[cq++];
-                nbytes--; remain--;
-                oftp->offset++;
-                if (oftp->offset > ip->i_size) {
-                    mip->INODE.i_size++; 
-                }
-                if (nbytes <= 0) break;
-            }
-            put_block(mip->dev, blk, wbuf);
-
+            blk = dibuf[j];
             // write the single indirect block back to disk
-            put_block(mip->dev, dbuf[i], (char *) ibuf);
+            put_block(mip->dev, ibuf[i], (char *) dibuf);
 
             // write the double indirect block back to disk
-            put_block(mip->dev, ip->i_block[13], (char *) dbuf);
+            put_block(mip->dev, ip->i_block[13], (char *) ibuf);
         }
 
         // read in the data block
@@ -162,34 +144,32 @@ int mywrite(int fd, char buf[], int nbytes)
         remain = BLKSIZE - startByte;
 
         // write as much as remain allows 
-        while (remain > 0) {
             // cq points at buf[ ]
-            *cp++ = buf[cq++];
-            // dec counts
-            nbytes--; remain--;
-            // // advance offset
-            oftp->offset++;
+        strncpy(cp, cq, remain);
+        cp += remain;
+        cq += remain;
+        written += remain;
+        oftp->offset += remain;
+        // dec counts
+        nbytes -= remain;
 
-            // especially for RW|APPEND mode
-            if (oftp->offset > ip->i_size) {
-                // inc file size (if offset > fileSize)
-                mip->INODE.i_size++; 
-            }
-            // if already nbytes, break
-            if (nbytes <= 0) break;
+        // // advance offset
+
+        // especially for RW|APPEND mode
+        if (oftp->offset > ip->i_size) {
+            // inc file size (if offset > fileSize)
+            mip->INODE.i_size += remain; 
         }
 
         // write wbuf[ ] to disk
         put_block(mip->dev, blk, wbuf);
 
-        if (nbytes <= 0) {
-            break;
-        }
         // loop back to outer while to write more .... until nbytes are written
     }
-
     // mark mip modified for iput() 
     mip->modified = 1;
-    printf("wrote %d char into file descriptor fd=%d\n", nbytes, fd);           
-    return nbytes;
+    //printf("wrote %d char into file descriptor fd=%d\n", nbytes, fd);           
+    return written;
 }
+
+

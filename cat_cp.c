@@ -22,18 +22,10 @@ int my_cat(char *filename)
         } 
     */
     while (n = myread(fd, mybuf, 1024)) {
-        mybuf[n] = 0;
-        char *cp = mybuf;
-        while (*cp != '\0') {
-            // handle \n properly
-            if (*cp == '\n') {
-                putchar('\n');
-            // spit out chars from mybuf[]
-            } else {
-                putchar(*cp);
-            }
-            cp++;
+        for (int i = 0; i < n; i++) {
+            putchar(mybuf[i]);
         }
+        
     }
 
     // 3. close(fd);

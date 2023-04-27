@@ -246,7 +246,7 @@ int main(int argc, char *argv[ ])
       //sscanf(line, "%s %d %s", cmd, &fd, pathname);
       //printf("fd: %d\n", fd);
       //printf("pathname: %s\n", pathname);
-      mywrite(fd, parameter, atoi(pathname));
+      mywrite(atoi(pathname), parameter, strlen(parameter));
     }
     else if(strcmp(cmd, "cat")==0)
     {
@@ -254,7 +254,7 @@ int main(int argc, char *argv[ ])
     }
     else if(strcmp(cmd, "cp")==0)
     {
-
+      my_cp(pathname, parameter);
     }
     else if(strcmp(cmd, "head")==0)
     {
