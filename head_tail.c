@@ -70,7 +70,8 @@ int tail(char *pathname)
         printf("ERROR: Failed to read file.\n");
         return -1;
     }
-    buf[n] = '\0';
+    printf("%d", n);
+    buf[n] = '\n';
 
     // 5. scan buf[ ] backwards for \n;  lines++  until lines=11
     int lines = 0, i = n - 1;
